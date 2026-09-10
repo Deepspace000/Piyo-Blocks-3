@@ -15,7 +15,7 @@
 <style>
 html,body{margin:0;height:100%;background:#1a1030;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none;position:fixed;width:100%}
 #wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);box-sizing:border-box}
-canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
+canvas{display:block;touch-action:none}
 </style>
 </head>
 <body>
@@ -28,15 +28,19 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
 //  number of each Piyo to LEVEL UP. Cascades build COMBOs.
 // ============================================================
 const cv=document.getElementById('c'), ctx=cv.getContext('2d');
-const W=320,H=568; cv.width=W; cv.height=H;
-function fit(){const wr=document.getElementById('wrap'); const aw=wr.clientWidth||innerWidth, ah=wr.clientHeight||innerHeight; const s=Math.min(aw/W,ah/H); cv.style.width=Math.floor(W*s)+'px'; cv.style.height=Math.floor(H*s)+'px';}
+const W=320,H=568;
+let VS=1,DPR=1,OX=0,OY=0,VW=W,VH=H,BG_RES=1; // view scale, pixel ratio, game origin inside the viewport and viewport size (game units)
+function fit(){ const wr=document.getElementById('wrap'); const aw=Math.max(1,wr.clientWidth||innerWidth), ah=Math.max(1,wr.clientHeight||innerHeight);
+  VS=Math.min(aw/W,ah/H); DPR=Math.min(3,window.devicePixelRatio||1);
+  cv.style.width=aw+'px'; cv.style.height=ah+'px'; cv.width=Math.round(aw*DPR); cv.height=Math.round(ah*DPR);
+  VW=aw/VS; VH=ah/VS; OX=(VW-W)/2; OY=(VH-H)/2; BG_RES=Math.min(4,Math.ceil(VS*DPR)); }
 addEventListener('resize',fit); addEventListener('orientationchange',()=>setTimeout(fit,150)); fit(); setTimeout(fit,50);
 if('serviceWorker' in navigator && location.protocol!=='file:'){ addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
 // block double-tap zoom / gestures on iOS
 document.addEventListener('gesturestart',e=>e.preventDefault()); document.addEventListener('dblclick',e=>e.preventDefault()); document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
 
 // ---------- save ----------
-const DEV_MUTE=true; // development: audio off by default (set false for release)
+const DEV_MUTE=false; // development: audio off by default (set false for release)
 let SAVE={hi:{},sound:!DEV_MUTE,music:!DEV_MUTE};
 try{const s=localStorage.getItem('piyo_save'); if(s) SAVE=Object.assign(SAVE,JSON.parse(s));}catch(e){}
 function save(){try{localStorage.setItem('piyo_save',JSON.stringify(SAVE));}catch(e){}}
@@ -143,9 +147,29 @@ function drawBlock(cx,cy,s,t,o){
     ctx.globalAlpha=.25; frr(-h+5,h-8,s-10,3,2,T.d); ctx.globalAlpha=1; // soft belly shade
     birdFace(s,expr,false,T.c);
   }
+  if(o.item===BOMB) drawBombIcon(h*0.5,-h*0.5,s*0.55); else if(o.item===DONUT) drawDonutIcon(h*0.5,-h*0.5,s*0.55);
   if(o.sel){ctx.lineWidth=2;ctx.strokeStyle='rgba(255,255,255,0.85)';rr(-h-1,-h-1,s+2,s+2,7);ctx.stroke();}
   ctx.restore();
 }
+function drawBombIcon(x,y,s){ // round black bomb with a fuse and a flickering spark
+  const r=s*0.36; ctx.save(); ctx.translate(x,y);
+  ctx.strokeStyle='#15100f'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(r*0.3,-r*0.8); ctx.quadraticCurveTo(r*0.9,-r*1.5,r*1.3,-r*1.1); ctx.stroke();
+  ctx.strokeStyle='#e8c070'; ctx.lineWidth=2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(0,0,r+1.5,0,Math.PI*2); ctx.fillStyle='#15100f'; ctx.fill();
+  ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle='#2c2c38'; ctx.fill();
+  ctx.beginPath(); ctx.arc(-r*0.3,-r*0.3,r*0.34,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.fill();
+  frr(-r*0.35,-r-2,r*0.7,r*0.45,1,'#5a5a6a');
+  const fl=0.6+0.4*Math.sin(appT*25); ctx.beginPath(); ctx.arc(r*1.3,-r*1.1,r*0.36*fl+1.5,0,Math.PI*2); ctx.fillStyle='#ffe14d'; ctx.fill();
+  ctx.beginPath(); ctx.arc(r*1.3,-r*1.1,r*0.18,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+  ctx.restore(); }
+function drawDonutIcon(x,y,s){ // pink frosted ring doughnut with sprinkles
+  const r=s*0.42; ctx.save(); ctx.translate(x,y);
+  ctx.beginPath(); ctx.arc(0,0,r+1.5,0,Math.PI*2); ctx.arc(0,0,r*0.3,0,Math.PI*2,true); ctx.fillStyle='#15100f'; ctx.fill('evenodd');
+  ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.arc(0,0,r*0.36,0,Math.PI*2,true); ctx.fillStyle='#e8a860'; ctx.fill('evenodd');
+  ctx.beginPath(); ctx.arc(0,-r*0.08,r*0.9,0,Math.PI*2); ctx.arc(0,0,r*0.42,0,Math.PI*2,true); ctx.fillStyle='#ff6fb5'; ctx.fill('evenodd');
+  for(const [px,py,col,a] of [[-r*0.6,-r*0.3,'#ffe14d',0.6],[r*0.5,-r*0.45,'#58c8e8',-0.4],[r*0.1,-r*0.75,'#6ed05a',0.2],[-r*0.35,r*0.5,'#ffffff',0.9],[r*0.6,r*0.35,'#ffe14d',-0.8]]){
+    ctx.save(); ctx.translate(px,py); ctx.rotate(a); frr(-r*0.18,-r*0.06,r*0.36,r*0.12,r*0.06,col); ctx.restore(); }
+  ctx.restore(); }
 function rndExpr(){ const r=Math.random(); return r<0.06?1:(r<0.14?2:0); }
 
 // ---------- reference art cut from the Piyo Blocks 2 cover (white-outline masked) ----------
@@ -192,7 +216,8 @@ function drawGirl(x,y,sc,bob){
 let ac=null, master=null, noiseBuf=null;
 function audioInit(){
   if(ac) { if(ac.state==='suspended') ac.resume(); return; }
-  try{ ac=new (window.AudioContext||window.webkitAudioContext)(); master=ac.createGain(); master.gain.value=0.5; master.connect(ac.destination);
+  try{ ac=new (window.AudioContext||window.webkitAudioContext)(); master=ac.createGain(); master.gain.value=0.5; master.connect(ac.destination); if(ac.state==='suspended') ac.resume();
+    try{ const u=ac.createBufferSource(); u.buffer=ac.createBuffer(1,1,22050); u.connect(ac.destination); u.start(0); }catch(e){} // iOS unlock
     noiseBuf=ac.createBuffer(1,ac.sampleRate*0.2,ac.sampleRate); const d=noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
   }catch(e){}
 }
@@ -222,6 +247,12 @@ const SFX={
   shuffle(){ if(!ac) return; const t=ac.currentTime; for(let i=0;i<8;i++) tone(300+Math.random()*600,0.05,'square',0.06,t+i*0.04); },
   tick(){tone(1200,0.03,'square',0.05);},
   select(){tone(780,0.04,'square',0.06);},
+  boom(){ if(!ac||!SAVE.sound) return; const t=ac.currentTime; // noise thump through a falling low-pass, plus a sub sweep
+    const s=ac.createBufferSource(); s.buffer=noiseBuf; s.loop=true; const f=ac.createBiquadFilter(); f.type='lowpass'; f.frequency.setValueAtTime(3200,t); f.frequency.exponentialRampToValueAtTime(120,t+0.45);
+    const g=ac.createGain(); g.gain.setValueAtTime(0.55,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.5); s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t+0.55);
+    tone(170,0.4,'sine',0.35,t,-130); tone(95,0.5,'triangle',0.25,t+0.02,-60); },
+  blast(i){ if(i>5) return; const t=ac?ac.currentTime+0.05+i*0.03:0; tone(320+i*30,0.09,'square',0.07,t,-180); },
+  donut(){ if(!ac) return; const t=ac.currentTime; [76,80,83,88,95].forEach((m,i)=>tone(mtof(m),0.14,'triangle',0.13,t+i*0.05)); tone(2400,0.25,'sine',0.05,t+0.2,1200); },
 };
 // music sequencer
 const MUS={
@@ -249,7 +280,7 @@ function musicUpdate(){
 // ---------- backgrounds ----------
 const PALS=[['#FF7DA0','#FF9FD5'],['#ff6410','#ffa055'],['#1fa0ff','#78ccff'],['#33c033','#84e068'],['#9040e8','#c89cff'],['#ffb000','#ffd860'],['#ff2848','#ff8494'],['#0fb8b0','#68e0d8']];
 function makeBg(level,disco){
-  const o=document.createElement('canvas'); o.width=W; o.height=H; const c=o.getContext('2d');
+  const o=document.createElement('canvas'); const R=BG_RES; o.width=W*R; o.height=H*R; o.res=R; const c=o.getContext('2d'); c.scale(R,R);
   const pal=disco?['#12101e','#1e1a34']:PALS[(level-1)%PALS.length];
   const stripes=!disco&&level%2===1;
   c.fillStyle=pal[0]; c.fillRect(0,0,W,H);
@@ -334,30 +365,32 @@ const MODES=[
 // ---------- game state ----------
 const COLS=7,ROWS=8,CELL=44,BS=42,BX=6,BY=78;
 let app='title', appT=0;
-let mode=null, grid=[], off=[], popP=[], sleepy=[];
+let mode=null, grid=[], off=[], popP=[], sleepy=[], item=[], parts=[], booms=[];
 let phase='play', swp=null, idleT=0, hint=null, hintT=0;
 let score=0, level=1, combo=0, maxCombo=0, time=0, maxTime=30, moveTime=3, book=3;
 let tg=[], cnt=[], levelCap=0, luT=0, overT=0, discoT=0, shakeT=0, introT=0;
 let fx=[], banner=null, bg=null, sel=null, drag=null, gameT=0, hiNew=false, totalCaptured=0;
-let overlayBtnLock=0;
+let overlayBtnLock=0, flashT=0;
 
 function numColours(){ if(!mode) return 6; if(mode.id==='piyo'||mode.id==='endless'||mode.id==='three') return level<3?6:7; return 6; }
 function rndType(){ return Math.random()<0.02?NINJA:Math.floor(Math.random()*numColours()); }
+const NONE=0,BOMB=1,DONUT=2; // items a piyo can carry
+function rndItem(t){ if(t===NINJA) return NONE; const r=Math.random(); return r<0.035?BOMB:(r<0.06?DONUT:NONE); }
 function isDisco(){return mode&&mode.id==='disco';}
 
 function newBoard(){
   for(let tries=0;tries<50;tries++){
-    grid=[];off=[];popP=[];sleepy=[];vel=[];
-    for(let r=0;r<ROWS;r++){grid.push([]);off.push([]);popP.push([]);sleepy.push([]);vel.push([]);
+    grid=[];off=[];popP=[];sleepy=[];vel=[];item=[];
+    for(let r=0;r<ROWS;r++){grid.push([]);off.push([]);popP.push([]);sleepy.push([]);vel.push([]);item.push([]);
       for(let c=0;c<COLS;c++){ let t; do{t=rndType();}while((c>=2&&grid[r][c-1]===t&&grid[r][c-2]===t)||(r>=2&&grid[r-1][c]===t&&grid[r-2][c]===t));
-        grid[r].push(t); off[r].push(0); popP[r].push(-1); sleepy[r].push(rndExpr()); vel[r].push(0);} }
+        grid[r].push(t); off[r].push(0); popP[r].push(-1); sleepy[r].push(rndExpr()); vel[r].push(0); item[r].push(rndItem(t));} }
     if(hasMove()) return;
   }
 }
 function startGame(m){
   mode=m; score=0; level=1; combo=0; maxCombo=0; book=3; totalCaptured=0; hiNew=false; gameT=0;
   setupLevel(); newBoard(); bg=makeBg(level,isDisco());
-  sel=null; drag=null; fx=[]; banner=null; hint=null; idleT=0; discoT=0;
+  sel=null; drag=null; fx=[]; parts=[]; booms=[]; banner=null; hint=null; idleT=0; discoT=0;
   for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){ off[r][c]=ROWS*CELL+40+c*18; vel[r][c]=0; }
   phase='intro'; introT=1.8; swp=null; calmChecked=false; calmT=0;
   app='game'; buttons=[]; playMusic(isDisco()?'disco':'game');
@@ -372,10 +405,7 @@ function setupLevel(){
   else if(mode.id==='three'){ moveTime=3; }
 }
 function drainRate(){ return 1+(level-1)*0.15; }
-function hudCount(i){
-  if(mode.id==='piyo'||mode.id==='three'||mode.id==='endless') return Math.max(0,tg[i]);
-  return Math.min(99,cnt[i]);
-}
+function hudCount(i){ if(!cnt[i]) return null; return Math.min(99,cnt[i]); } // blank until the first capture
 function hudDone(i){ if(i>=numColours()) return true; if(mode.id==='piyo'||mode.id==='three'||mode.id==='endless') return tg[i]<=0; if(mode.id==='hyaku') return cnt[i]>=99; return false; }
 function levelComplete(){
   if(mode.id==='piyo'||mode.id==='three'||mode.id==='endless') return tg.every(v=>v<=0);
@@ -401,7 +431,7 @@ function matchAt(r,c){ // static check on grid types only
   let n=1; for(let i=c-1;i>=0&&grid[r][i]===t;i--) n++; for(let i=c+1;i<COLS&&grid[r][i]===t;i++) n++; if(n>=3) return true;
   n=1; for(let i=r-1;i>=0&&grid[i][c]===t;i--) n++; for(let i=r+1;i<ROWS&&grid[i][c]===t;i++) n++; return n>=3;
 }
-function swapCells(a,b){const t=grid[a[0]][a[1]]; grid[a[0]][a[1]]=grid[b[0]][b[1]]; grid[b[0]][b[1]]=t; const sl=sleepy[a[0]][a[1]]; sleepy[a[0]][a[1]]=sleepy[b[0]][b[1]]; sleepy[b[0]][b[1]]=sl;}
+function swapCells(a,b){const t=grid[a[0]][a[1]]; grid[a[0]][a[1]]=grid[b[0]][b[1]]; grid[b[0]][b[1]]=t; const sl=sleepy[a[0]][a[1]]; sleepy[a[0]][a[1]]=sleepy[b[0]][b[1]]; sleepy[b[0]][b[1]]=sl; const it=item[a[0]][a[1]]; item[a[0]][a[1]]=item[b[0]][b[1]]; item[b[0]][b[1]]=it;}
 function findMove(){
   const order=[]; for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) order.push([r,c]);
   for(let i=order.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [order[i],order[j]]=[order[j],order[i]];}
@@ -415,11 +445,11 @@ function findMove(){
 function hasMove(){return !!findMove();}
 function staticMatches(){ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) if(matchAt(r,c)) return true; return false; }
 function doShuffle(){
-  const types=[]; for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) types.push(grid[r][c]);
+  const types=[]; for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) types.push([grid[r][c],item[r][c]]);
   let ok=false;
   for(let tries=0;tries<200&&!ok;tries++){
     for(let i=types.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [types[i],types[j]]=[types[j],types[i]];}
-    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) grid[r][c]=types[r*COLS+c];
+    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){ grid[r][c]=types[r*COLS+c][0]; item[r][c]=types[r*COLS+c][1]; }
     ok=!staticMatches()&&hasMove();
   }
   if(!ok) newBoard();
@@ -432,30 +462,44 @@ function cellXY(r,c){return [BX+c*CELL+BS/2+2, BY+r*CELL+BS/2+2-off[r][c]];}
 function resolveMatches(){
   const m=findMatches(); if(!m.runs.length) return false;
   combo++; if(combo>maxCombo) maxCombo=combo;
-  const extra=[];
+  const cells=new Set(m.cells);
+  // ninja neighbours pop with the match
   for(const idx of m.cells){const r=Math.floor(idx/COLS),c=idx%COLS;
     for(const [dr,dc] of [[0,1],[0,-1],[1,0],[-1,0]]){const r2=r+dr,c2=c+dc; if(r2<0||r2>=ROWS||c2<0||c2>=COLS) continue;
-      if(grid[r2][c2]===NINJA&&settled(r2,c2)&&!m.cells.has(r2*COLS+c2)&&extra.indexOf(r2*COLS+c2)<0) extra.push(r2*COLS+c2);}}
-  let captured=0, bonusTime=0;
-  const counted=new Set();
-  for(const run of m.runs){
-    const pts=run.len*60*combo; score+=pts;
-    const mid=run.cells[Math.floor(run.len/2)]; const [x,y]=cellXY(mid[0],mid[1]);
-    addFx(x,y-6,pts+(combo>1?'X'+combo:''),'#fff',1,'#000',true);
-    if(run.len>=4){ bonusTime+=4; addFx(x,y+10,'+TIME','#ffe14d',1,'#7a2e0a'); }
-    if(run.len>=5){ score+=1000; addFx(x,y+22,'BONUS 1000','#ffd23f',1,'#7a2e0a'); SFX.bonus(); }
-    for(const [r,c] of run.cells){ const k=r*COLS+c; if(counted.has(k)) continue; counted.add(k);
-      captured++; const t=grid[r][c]; cnt[t]++; if(t<NCOL) tg[t]--; if(t===NINJA){score+=500;} }
-  }
-  for(const k of extra){ const r=Math.floor(k/COLS),c=k%COLS; m.cells.add(k); cnt[NINJA]++; score+=500; bonusTime+=2; const [x,y]=cellXY(r,c); addFx(x,y,'NINJA +500','#fff',1,'#12121c'); }
+      if(grid[r2][c2]===NINJA&&settled(r2,c2)) cells.add(r2*COLS+c2);}}
+  // bombs: a matched bomb blasts its 8 neighbours; blasted bombs chain
+  const queue=[]; for(const k of cells) if(item[Math.floor(k/COLS)][k%COLS]===BOMB) queue.push(k);
+  const blasted=new Set(), fired=[];
+  while(queue.length){ const k=queue.shift(); const r=Math.floor(k/COLS),c=k%COLS; fired.push([r,c]);
+    for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){ const r2=r+dr,c2=c+dc; if((!dr&&!dc)||r2<0||r2>=ROWS||c2<0||c2>=COLS) continue;
+      const k2=r2*COLS+c2; if(cells.has(k2)||grid[r2][c2]<0||popP[r2][c2]>=0||inSwap(r2,c2)) continue;
+      cells.add(k2); blasted.add(k2); if(item[r2][c2]===BOMB) queue.push(k2); } }
+  // capture everything at once: points depend on how many piyos go in one hit
+  let captured=0, bonusTime=0, donuts=0, ninjas=0;
+  for(const k of cells){ const r=Math.floor(k/COLS),c=k%COLS; const t=grid[r][c]; captured++; cnt[t]++; if(t<NCOL) tg[t]--; if(t===NINJA) ninjas++;
+    const [x,y]=cellXY(r,c);
+    if(item[r][c]===DONUT){ donuts++; addFx(x,y-4,mode.id==='endless'?'DONUT +250':'+5 SEC','#ffe14d',1,'#7a2e0a'); spawnParts(x,y,14,['#ff8ec8','#ffffff','#ffe14d'],1.4); }
+    spawnParts(x,y,blasted.has(k)?4:5,[TYPES[t].l,TYPES[t].c],1);
+    if(popP[r][c]<0) popP[r][c]=0; if(sel&&sel[0]===r&&sel[1]===c) sel=null; }
+  const n=captured, pts=n*10*(n-2)*combo+ninjas*500+donuts*250; score+=pts;
+  const mid=m.runs[0].cells[Math.floor(m.runs[0].len/2)]; const [px,py]=cellXY(mid[0],mid[1]);
+  addFx(px,py-6,pts+(combo>1?' X'+combo:''),'#fff',1,'#000',true);
+  const longest=Math.max(...m.runs.map(r=>r.len));
+  if(longest>=4){ bonusTime+=4; addFx(px,py+10,'+TIME','#ffe14d',1,'#7a2e0a'); }
+  if(longest>=5) SFX.bonus();
+  bonusTime+=donuts*5+ninjas*2;
+  for(const [r,c] of fired){ const [x,y]=cellXY(r,c); booms.push({x,y,t:0}); spawnParts(x,y,26,['#ffd23f','#ff8a2a','#ff3d3d','#ffffff'],2.2); }
+  if(fired.length){ SFX.boom(); shakeT=Math.max(shakeT,0.35); flashT=0.18; let i=0; for(const k of blasted) SFX.blast(i++); }
+  if(donuts) SFX.donut();
   totalCaptured+=captured; levelCap+=captured;
   if(mode.id==='piyo'||mode.id==='hyaku'){ time=Math.min(maxTime,time+captured*0.6+bonusTime); }
   else if(mode.id==='time'||mode.id==='disco'){ time=Math.min(maxTime,time+bonusTime*0.5); }
-  if(combo>=2){ banner={txt:'COMBO X'+combo,life:1.0,t:0,col:'#ff8b2e'}; SFX.combo(combo); shakeT=Math.min(0.3,combo*0.05); }
-  let i=0; for(const k of m.cells){ const r=Math.floor(k/COLS),c=k%COLS; popP[r][c]=0; SFX.pop(combo,i++); if(sel&&sel[0]===r&&sel[1]===c) sel=null; }
+  if(combo>=2){ banner={txt:'COMBO X'+combo,life:1.0,t:0,col:'#ff8b2e'}; SFX.combo(combo); shakeT=Math.max(shakeT,Math.min(0.3,combo*0.05)); }
+  let i=0; for(const k of cells) SFX.pop(combo,i++);
   hint=null; idleT=0;
   return true;
 }
+function spawnParts(x,y,n,cols,pow){ for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, sp=(60+Math.random()*160)*pow; parts.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40*pow,life:0.45+Math.random()*0.4,col:cols[i%cols.length],sz:2+Math.random()*3*pow}); } }
 function compactAll(){
   for(let c=0;c<COLS;c++){
     let hole=false, popping=false;
@@ -463,8 +507,8 @@ function compactAll(){
     if(!hole||popping) continue;
     if(swp&&(swp.a[1]===c||swp.b[1]===c)){ swp=null; } // a swap in this column is abandoned (grid not yet swapped)
     let w=ROWS-1;
-    for(let r=ROWS-1;r>=0;r--){ if(grid[r][c]>=0){ if(r!==w){ grid[w][c]=grid[r][c]; sleepy[w][c]=sleepy[r][c]; off[w][c]=off[r][c]+(w-r)*CELL; vel[w][c]=vel[r][c]; grid[r][c]=-1; off[r][c]=0; vel[r][c]=0; } w--; } }
-    for(let r=w;r>=0;r--){ grid[r][c]=rndType(); sleepy[r][c]=rndExpr(); off[r][c]=(w+1)*CELL+12; vel[r][c]=0; popP[r][c]=-1; }
+    for(let r=ROWS-1;r>=0;r--){ if(grid[r][c]>=0){ if(r!==w){ grid[w][c]=grid[r][c]; sleepy[w][c]=sleepy[r][c]; item[w][c]=item[r][c]; off[w][c]=off[r][c]+(w-r)*CELL; vel[w][c]=vel[r][c]; grid[r][c]=-1; off[r][c]=0; vel[r][c]=0; } w--; } }
+    for(let r=w;r>=0;r--){ grid[r][c]=rndType(); item[r][c]=rndItem(grid[r][c]); sleepy[r][c]=rndExpr(); off[r][c]=(w+1)*CELL+12; vel[r][c]=0; popP[r][c]=-1; }
     for(let r=ROWS-1;r>=1;r--) if(off[r-1][c]<off[r][c]){ off[r-1][c]=off[r][c]; vel[r-1][c]=Math.min(vel[r-1][c],vel[r][c]); }
     if(sel&&sel[1]===c) sel=null; hint=null;
   }
@@ -480,10 +524,10 @@ function discoShift(){
   if(changed) SFX.tick();
 }
 function gameOver(){
-  phase='over'; overT=0; music.cur=null; SFX.over(); swp=null; sel=null; fx=[]; banner=null; hint=null;
+  phase='over'; overT=0; music.cur=null; SFX.over(); swp=null; sel=null; fx=[]; parts=[]; booms=[]; banner=null; hint=null;
   const k=mode.id; if(score>(SAVE.hi[k]||0)){SAVE.hi[k]=score; hiNew=true; save();}
 }
-function levelUp(){ phase='levelup'; luT=2.4; SFX.levelup(); score+=level*500; sel=null; hint=null; swp=null; fx=[]; banner=null; }
+function levelUp(){ phase='levelup'; luT=2.4; SFX.levelup(); score+=level*500; sel=null; hint=null; swp=null; fx=[]; parts=[]; booms=[]; banner=null; }
 function finishLevelUp(){
   level++; setupLevel(); book=Math.min(9,book+1); bg=makeBg(level,isDisco()); newBoard();
   for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){ off[r][c]=ROWS*CELL+40+c*18; vel[r][c]=0; }
@@ -498,6 +542,9 @@ function update(dt){
   if(phase==='paused'||phase==='over'){ if(phase==='over') overT+=dt; return; }
   gameT+=dt;
   for(const f of fx){f.life-=dt*1.1; f.y+=f.vy*dt; f.vy*=0.92;} fx=fx.filter(f=>f.life>0);
+  for(const p of parts){ p.life-=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=520*dt; p.vx*=0.96; } parts=parts.filter(p=>p.life>0);
+  for(const b of booms) b.t+=dt; booms=booms.filter(b=>b.t<0.5);
+  if(flashT>0) flashT-=dt;
   if(banner){banner.t+=dt; banner.life-=dt; if(banner.life<=0) banner=null;}
   if(shakeT>0) shakeT-=dt;
   for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) if(popP[r][c]<0&&popP[r][c]>-1) popP[r][c]=Math.max(-1,popP[r][c]-dt*2); // disco flash decay
@@ -541,13 +588,30 @@ function update(dt){
 
 // ---------- render ----------
 function render(){
-  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,W,H);
+  ctx.setTransform(VS*DPR,0,0,VS*DPR,0,0); ctx.clearRect(0,0,VW,VH);
+  drawMargins();
+  ctx.save(); ctx.translate(OX,OY); ctx.beginPath(); ctx.rect(0,0,W,H); ctx.clip();
   if(app==='title') renderTitle();
   else if(app==='modes') renderModes();
   else if(app==='help') renderHelp();
   else if(app==='options') renderOptions();
   else renderGame();
+  ctx.restore();
 }
+function checkerCols(){ // two tones for the checkerboard: level palette in play, night sky elsewhere
+  if(app==='game'&&mode){ if(isDisco()) return ['#141230','#1d1a40']; const pal=PALS[(level-1)%PALS.length]; return [mixHex(pal[0],'#ffffff',0.12),mixHex(pal[1],'#ffffff',0.3)]; }
+  return ['#1a1030','#241a46'];
+}
+function drawChecker(x0,y0,w,h,cols,S,t,dim){ // slowly drifting checkerboard clipped to a rect (the parallax layer behind the piyos)
+  ctx.save(); ctx.beginPath(); ctx.rect(x0,y0,w,h); ctx.clip();
+  ctx.fillStyle=cols[0]; ctx.fillRect(x0,y0,w,h); ctx.fillStyle=cols[1];
+  const ox=((t*7)%(2*S)+2*S)%(2*S), oy=((t*4.5)%(2*S)+2*S)%(2*S);
+  const sx=Math.floor((x0-ox)/S)*S-S, sy=Math.floor((y0-oy)/S)*S-S;
+  for(let y=sy;y<y0+h;y+=S){ const row=((Math.round(y/S)%2)+2)%2; for(let x=sx+(row?S:0);x<x0+w;x+=2*S) ctx.fillRect(x+ox,y+oy,S,S); }
+  if(dim){ ctx.fillStyle='rgba(0,0,0,'+dim+')'; ctx.fillRect(x0,y0,w,h); }
+  ctx.restore();
+}
+function drawMargins(){ if(OX<1&&OY<1) return; drawChecker(0,0,VW,VH,checkerCols(),CELL,appT,0.55); } // iPad / wide screens: the board pattern continues past the phone frame
 function blob(x,y,w,h,col,shade){ // tall rounded bush lobe with darker lower half
   rr(x,y,w,h,Math.min(w,h)/2); ctx.fillStyle=col; ctx.fill();
   ctx.save(); ctx.clip(); ctx.fillStyle=shade; ctx.fillRect(x,y+h*0.55,w,h); ctx.restore();
@@ -643,12 +707,14 @@ function renderHelp(){
   const L=['SWAP TWO PIYOS NEXT TO EACH','OTHER TO LINE UP 3 OR MORE OF','THE SAME COLOUR.','',
     'DRAG A PIYO, OR TAP ONE THEN','TAP ITS NEIGHBOUR. YOU CAN KEEP','SWAPPING WHILE PIYOS ARE FALLING!','',
     'CAPTURE THE TARGET NUMBER OF','EACH PIYO (BOTTOM ROW) TO','LEVEL UP.','',
-    'THE CLOCK BAR DRAINS. EVERY','CAPTURE ADDS TIME. MATCH 4 FOR','+TIME, MATCH 5 FOR A BONUS.','',
-    'CASCADES MAKE COMBOS THAT','MULTIPLY YOUR SCORE!','',
+    'THE CLOCK BAR DRAINS. EVERY','CAPTURE ADDS TIME. MATCH 4 OR','MORE FOR EXTRA TIME.','',
+    'MORE PIYOS IN ONE GO = MORE','POINTS. CASCADE COMBOS','MULTIPLY THE SCORE!','',
+    'BOMB PIYOS BLOW UP ALL 8','NEIGHBOURS WHEN MATCHED.','',
+    'DONUT PIYOS ADD 5 SECONDS','AND 250 POINTS.','',
     'NINJA PIYOS (BLACK) POP WHEN','A NEIGHBOUR IS CAPTURED: +500.','',
     'TAP THE BOOK FOR A HINT.'];
   for(let i=0;i<L.length;i++) drawText(L[i],30,68+i*13,1,'#3a1a10');
-  drawBlock(262,320,30,0,{}); drawBlock(262,360,30,NINJA,{});
+  drawBlock(262,334,30,1,{item:BOMB}); drawBlock(262,374,30,0,{item:DONUT}); drawBlock(262,414,30,NINJA,{});
   for(const b of buttons) drawBtn(b);
 }
 function renderOptions(){
@@ -668,8 +734,10 @@ function drawBook(x,y,n){ // cream page body, orange-brown spine with clasps, re
 }
 function renderGame(){
   const disco=isDisco();
-  ctx.drawImage(bg,0,0);
-  let sx=0,sy=0; if(shakeT>0){sx=(Math.random()-0.5)*6; sy=(Math.random()-0.5)*6;}
+  if(!bg||bg.res!==BG_RES) bg=makeBg(level,disco);
+  ctx.drawImage(bg,0,0,W,H);
+  if(disco) drawChecker(BX-1,BY-1,COLS*CELL,ROWS*CELL,checkerCols(),CELL,appT,0); else drawChecker(0,BY-4,W,ROWS*CELL+8,checkerCols(),CELL,appT,0);
+  let sx=0,sy=0; if(shakeT>0){ const amp=shakeT>0.3?12:6; sx=(Math.random()-0.5)*amp; sy=(Math.random()-0.5)*amp; }
   ctx.save(); ctx.translate(sx,sy);
   // stopwatch: 24px, black outline, dark hands, button on top
   ctx.fillStyle='#1A0A05'; ctx.fillRect(15,2,8,4); ctx.fillRect(17,0,4,3);
@@ -692,7 +760,7 @@ function renderGame(){
   const bounce=Math.sin(appT*2)*0.5;
   if(phase!=='levelup') for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
     const t=grid[r][c]; if(t<0) continue;
-    let [x,y]=cellXY(r,c); const o={disco,expr:sleepy[r][c]};
+    let [x,y]=cellXY(r,c); const o={disco,expr:sleepy[r][c],item:item[r][c]};
     if(swp){ const isA=swp.a[0]===r&&swp.a[1]===c, isB=swp.b[0]===r&&swp.b[1]===c;
       if(isA||isB){ const from=isA?swp.a:swp.b, to=isA?swp.b:swp.a; const [fx0,fy0]=cellXY(from[0],from[1]); const [tx,ty]=cellXY(to[0],to[1]);
         const k=swp.back?1-Math.min(1,swp.t):Math.min(1,swp.t); x=fx0+(tx-fx0)*k; y=fy0+(ty-fy0)*k; } }
@@ -700,9 +768,14 @@ function renderGame(){
     if(sel&&sel[0]===r&&sel[1]===c){ o.sel=true; o.scale=1.08; }
     if(hint&&((hint[0][0]===r&&hint[0][1]===c)||(hint[1][0]===r&&hint[1][1]===c))){ x+=Math.sin(hintT*20)*2; o.sel=Math.floor(hintT*4)%2===0; }
     drawBlock(x,y+bounce,BS,t,o); ctx.globalAlpha=1;
-    if(popP[r][c]<0&&popP[r][c]>-1){ ctx.globalAlpha=0.6*(1+popP[r][c]*2); frr(x-BS/2,y-BS/2,BS,BS,6,'#fff'); ctx.globalAlpha=1; }
+    if(popP[r][c]<0&&popP[r][c]>-1){ ctx.globalAlpha=Math.max(0,0.6*(1+popP[r][c]*2)); frr(x-BS/2,y-BS/2,BS,BS,6,'#fff'); ctx.globalAlpha=1; }
   }
   ctx.restore();
+  // particles, bomb rings and the white blast flash
+  for(const p of parts){ ctx.globalAlpha=Math.min(1,p.life*2.5); frr(p.x-p.sz/2,p.y-p.sz/2,p.sz,p.sz,p.sz*0.3,p.col); } ctx.globalAlpha=1;
+  for(const b of booms){ const k=b.t/0.5; ctx.globalAlpha=1-k; ctx.strokeStyle='#fff'; ctx.lineWidth=8*(1-k)+2; ctx.beginPath(); ctx.arc(b.x,b.y,10+k*70,0,Math.PI*2); ctx.stroke();
+    ctx.strokeStyle='#ff8a2a'; ctx.lineWidth=4*(1-k)+1; ctx.beginPath(); ctx.arc(b.x,b.y,4+k*54,0,Math.PI*2); ctx.stroke(); } ctx.globalAlpha=1;
+  if(flashT>0){ ctx.globalAlpha=Math.min(1,flashT*3); ctx.fillStyle='#fff'; ctx.fillRect(0,BY-4,W,ROWS*CELL+8); ctx.globalAlpha=1; }
   // fx: score pops in dark boxes, bonus text in gold
   for(const f of fx){ ctx.globalAlpha=Math.min(1,f.life*2);
     if(f.box){ const w=textW(f.txt,1); frr(f.x-w/2-5,f.y-4,w+10,14,3,'rgba(43,26,20,0.85)'); drawText(f.txt,f.x,f.y,1,'#fff6e0','center'); }
@@ -711,7 +784,7 @@ function renderGame(){
   if(banner){ const s=banner.t<0.15?1+(0.15-banner.t)*8:1; ctx.save(); ctx.translate(160,BY+ROWS*CELL/2-10); ctx.scale(s,s);
     ctx.globalAlpha=Math.min(1,banner.life*3); drawTextO(banner.txt,0,0,4,goldGrad(0,20),'#2b1a14','center',2,'rgba(0,0,0,0.35)'); ctx.restore(); ctx.globalAlpha=1; }
   // bottom HUD: 7 block icons with counters, book at right
-  for(let i=0;i<NCOL;i++){ const x=24+i*36; const done=hudDone(i); drawBlock(x,BY+ROWS*CELL+24,26,done?NINJA:i,{disco}); const v=hudCount(i); drawTextO(pad(v,2),x,BY+ROWS*CELL+45,2,'#FFFFFF','#000000','center',1); }
+  for(let i=0;i<NCOL;i++){ const x=24+i*36; const done=hudDone(i); drawBlock(x,BY+ROWS*CELL+24,26,done?NINJA:i,{disco}); const v=hudCount(i); if(v!==null) drawTextO(pad(v,2),x,BY+ROWS*CELL+45,2,'#FFFFFF','#000000','center',1); }
   drawBook(262,BY+ROWS*CELL+6,book);
   ctx.restore();
   // overlays
@@ -777,7 +850,7 @@ function pauseGame(){ if(phase!=='play') return; phase='paused'; buttons=[]; uiL
 function setOverButtons(){ buttons=[]; uiLockUntil=performance.now()+400; addBtn(40,300,110,34,'RETRY',()=>startGame(mode)); addBtn(170,300,110,34,'MENU',()=>gotoTitle()); }
 
 // ---------- input ----------
-function toXY(e){const r=cv.getBoundingClientRect(); return [(e.clientX-r.left)/r.width*W,(e.clientY-r.top)/r.height*H];}
+function toXY(e){const r=cv.getBoundingClientRect(); return [(e.clientX-r.left)/VS-OX,(e.clientY-r.top)/VS-OY];}
 function cellAt(x,y){const c=Math.floor((x-BX)/CELL), r=Math.floor((y-BY)/CELL); if(c<0||c>=COLS||r<0||r>=ROWS) return null; return [r,c];}
 cv.addEventListener('pointerdown',e=>{
   e.preventDefault(); audioInit(); if(music.cur===null&&app==='title') playMusic('title');
@@ -800,7 +873,7 @@ cv.addEventListener('pointermove',e=>{
     drag=null; if(n[0]>=0&&n[0]<ROWS&&n[1]>=0&&n[1]<COLS) trySwap(c,n); else sel=null; }
 });
 cv.addEventListener('pointerup',e=>{
-  e.preventDefault(); const [x,y]=toXY(e);
+  e.preventDefault(); audioInit(); const [x,y]=toXY(e);
   if(drag&&app==='game'&&phase==='play'){ const cl=cellAt(x,y); const c=drag.cell; drag=null;
     if(cl&&Math.abs(cl[0]-c[0])+Math.abs(cl[1]-c[1])===1){ trySwap(c,cl); return; } }
   drag=null;
