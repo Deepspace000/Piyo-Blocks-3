@@ -543,13 +543,17 @@ function drawLogo(y){
 function renderTitle(){
   drawSkyBg(appT);
   drawLogo(46);
+  // tall rounded bushes flanking the sign
+  for(const [bx,by,bw,bh] of [[-6,170,54,150],[272,160,56,160],[30,215,40,100],[250,225,44,100]]){ rr(bx,by,bw,bh,bw/2); ctx.fillStyle='#8fe07f'; ctx.fill(); ctx.strokeStyle='#2f9e32'; ctx.lineWidth=3; ctx.stroke(); rr(bx+6,by+8,bw*0.35,bh*0.4,bw*0.17); ctx.fillStyle='#c9f7ae'; ctx.fill(); }
   drawSign(38,146,244,160);
+  // yellow bracket hooks
+  for(const hx of [26,278]){ frr(hx,196,16,60,4,'#7a2e0a'); frr(hx+3,199,10,54,3,'#ffd43a'); frr(hx+3,199,10,6,2,'#fff0a0'); }
   frr(62,300,20,52,3,'#c85a12'); frr(65,303,14,46,2,'#f7941d'); frr(238,300,20,52,3,'#c85a12'); frr(241,303,14,46,2,'#f7941d');
   for(const b of buttons) drawBtn(b);
   // hi score plaque
-  frr(52,338,216,50,8,'#7a1020'); frr(56,342,208,42,6,'#e6395b'); ctx.globalAlpha=.3; frr(60,346,200,5,2,'#fff'); ctx.globalAlpha=1;
-  drawTextO('HI SCORE',160,349,1,'#fff6e0','#7a1020','center',1);
-  const best=Math.max(0,...Object.values(SAVE.hi)); frr(96,360,128,18,9,'#fff'); drawText(pad(best,6),160,364,2,'#e6395b','center');
+  frr(52,338,216,52,8,'#7a1020'); frr(56,342,208,44,6,'#e6395b'); ctx.globalAlpha=.3; frr(60,346,200,5,2,'#fff'); ctx.globalAlpha=1;
+  drawTextO('HI SCORE',160,348,2,'#ffd43a','#7a1020','center',1);
+  const best=Math.max(0,...Object.values(SAVE.hi)); frr(96,362,128,18,9,'#fff'); drawText(pad(best,6),160,366,2,'#e6395b','center');
   drawPiyo(10,H-128,3,Math.sin(appT*3)*3);
   drawBlock(262,H-58,30,4,{expr:1}); drawBlock(296,H-64,30,5,{}); drawBlock(279,H-30,30,0,{});
   drawBlock(140,H-40,26,2,{expr:2});
