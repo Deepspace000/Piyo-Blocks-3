@@ -41,7 +41,7 @@ document.addEventListener('gesturestart',e=>e.preventDefault()); document.addEve
 
 // ---------- save ----------
 const DEV_MUTE=false; // development: audio off by default (set false for release)
-let SAVE={hi:{},sound:!DEV_MUTE,music:!DEV_MUTE};
+let SAVE={hi:{},sound:!DEV_MUTE,music:!DEV_MUTE,food:false};
 try{const s=localStorage.getItem('piyo_save'); if(s) SAVE=Object.assign(SAVE,JSON.parse(s));}catch(e){}
 function save(){try{localStorage.setItem('piyo_save',JSON.stringify(SAVE));}catch(e){}}
 
@@ -115,8 +115,56 @@ const TYPES=[
  {n:'cyan',  c:'#58C8E8',l:'#B0ECF8',d:'#20708A'},
  {n:'purple',c:'#8A3A9A',l:'#C080D0',d:'#4A1A5A'},
  {n:'ninja', c:'#2E2E36',l:'#4A4A56',d:'#101014'},
+ {n:'donut', c:'#ff6fb5',l:'#ffb0d8',d:'#a0306e'},
+ {n:'melon', c:'#4cc94c',l:'#a0f0a0',d:'#1e7a2a'},
 ];
-const NINJA=7, NCOL=7;
+const NINJA=7, NCOL=7, DONUT_T=8, WATERMELON=9;
+const FOOD=[ // food block set: same seven slots as the piyos, drawn as icons on the checkerboard
+ {n:'strawberry',c:'#F03A3A',l:'#FF8A8A',d:'#A01818'},
+ {n:'orange',    c:'#F88A20',l:'#FFC070',d:'#A04A08'},
+ {n:'lime',      c:'#7ED03A',l:'#C8F090',d:'#2E7A28'},
+ {n:'sushi',     c:'#F86A30',l:'#FFF4E0',d:'#8A2A08'},
+ {n:'sapphire',  c:'#2E5AE0',l:'#8AB0FF',d:'#142A80'},
+ {n:'diamond',   c:'#58D8F0',l:'#C8F6FF',d:'#1A7A98'},
+ {n:'amethyst',  c:'#9A48E8',l:'#D0A0FF',d:'#4A1A80'},
+];
+function TH(t){ return (SAVE.food&&t<NCOL)?FOOD[t]:TYPES[t]; } // colours for particles, HUD and glows follow the active block set
+function drawFood(t,s){ // one food icon centred on the origin, designed in a 42px box
+  const k=s/42; ctx.save(); ctx.scale(k,k); ctx.lineWidth=3; ctx.strokeStyle='#15100f'; ctx.lineJoin='round';
+  if(t===0){ // strawberry: red heart body, yellow seeds, leaf crown
+    ctx.beginPath(); ctx.moveTo(0,19); ctx.bezierCurveTo(-22,4,-19,-14,0,-11); ctx.bezierCurveTo(19,-14,22,4,0,19); ctx.closePath(); ctx.fillStyle='#F03A3A'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#FFE070'; for(const [x,y] of [[-8,-2],[0,-4],[8,-2],[-5,6],[5,6],[0,12]]){ ctx.beginPath(); ctx.ellipse(x,y,1.6,2.4,0,0,Math.PI*2); ctx.fill(); }
+    ctx.lineWidth=2; for(const a of [-1.1,-0.4,0.4,1.1]){ ctx.beginPath(); ctx.ellipse(Math.sin(a)*7,-13+Math.abs(a),3,6,a,0,Math.PI*2); ctx.fillStyle='#4CC94C'; ctx.fill(); ctx.stroke(); }
+  } else if(t===1){ // orange with a leaf
+    ctx.beginPath(); ctx.arc(0,2,17,0,Math.PI*2); ctx.fillStyle='#F88A20'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle='rgba(160,74,8,0.3)'; for(const [x,y] of [[6,6],[10,-1],[2,12],[-8,9],[-3,-2]]){ ctx.beginPath(); ctx.arc(x,y,1.4,0,Math.PI*2); ctx.fill(); }
+    ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.beginPath(); ctx.arc(-7,-5,4.5,0,Math.PI*2); ctx.fill();
+    ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(6,-15,7,3.5,-0.5,0,Math.PI*2); ctx.fillStyle='#4CC94C'; ctx.fill(); ctx.stroke();
+  } else if(t===2){ // lime slice
+    ctx.beginPath(); ctx.arc(0,0,18,0,Math.PI*2); ctx.fillStyle='#4CB830'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,0,14,0,Math.PI*2); ctx.fillStyle='#D8F8A0'; ctx.fill();
+    ctx.fillStyle='#8EDC48'; for(let i=0;i<8;i++){ ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,12,i*Math.PI/4+0.14,(i+1)*Math.PI/4-0.14); ctx.closePath(); ctx.fill(); }
+    ctx.beginPath(); ctx.arc(0,0,2.5,0,Math.PI*2); ctx.fillStyle='#D8F8A0'; ctx.fill();
+  } else if(t===3){ // salmon nigiri on a dark tray
+    frr(-19,5,38,13,4,'#15100f'); frr(-17,7,34,9,3,'#2a2a34');
+    rr(-15,-2,30,14,5); ctx.fillStyle='#FFF4E0'; ctx.fill(); ctx.stroke();
+    rr(-18,-15,36,15,6); ctx.fillStyle='#F86A30'; ctx.fill(); ctx.stroke();
+    ctx.strokeStyle='#FFB090'; ctx.lineWidth=2; for(const x of [-11,-3,5]){ ctx.beginPath(); ctx.moveTo(x,-12); ctx.lineTo(x+4,-3); ctx.stroke(); }
+  } else if(t===4){ // sapphire: round faceted blue gem
+    ctx.beginPath(); ctx.arc(0,0,18,0,Math.PI*2); ctx.fillStyle='#2E5AE0'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); for(let i=0;i<8;i++){ const a=i*Math.PI/4-Math.PI/8; i?ctx.lineTo(Math.cos(a)*11,Math.sin(a)*11):ctx.moveTo(Math.cos(a)*11,Math.sin(a)*11); } ctx.closePath(); ctx.fillStyle='#6A94FF'; ctx.fill();
+    ctx.strokeStyle='#8AB0FF'; ctx.lineWidth=1.5; for(let i=0;i<8;i++){ const a=i*Math.PI/4-Math.PI/8; ctx.beginPath(); ctx.moveTo(Math.cos(a)*11,Math.sin(a)*11); ctx.lineTo(Math.cos(a)*17,Math.sin(a)*17); ctx.stroke(); }
+    ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.arc(-6,-6,3.5,0,Math.PI*2); ctx.fill();
+  } else if(t===5){ // diamond: cyan rhombus with a table facet
+    ctx.beginPath(); ctx.moveTo(0,-19); ctx.lineTo(18,0); ctx.lineTo(0,19); ctx.lineTo(-18,0); ctx.closePath(); ctx.fillStyle='#58D8F0'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(9,0); ctx.lineTo(0,8); ctx.lineTo(-9,0); ctx.closePath(); ctx.fillStyle='#C8F6FF'; ctx.fill();
+    ctx.strokeStyle='#C8F6FF'; ctx.lineWidth=1.5; for(const [x,y,x2,y2] of [[0,-8,0,-19],[9,0,18,0],[0,8,0,19],[-9,0,-18,0]]){ ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x2,y2); ctx.stroke(); }
+  } else if(t===6){ // amethyst: purple hexagon gem
+    ctx.beginPath(); for(let i=0;i<6;i++){ const a=i*Math.PI/3-Math.PI/2; i?ctx.lineTo(Math.cos(a)*19,Math.sin(a)*19):ctx.moveTo(Math.cos(a)*19,Math.sin(a)*19); } ctx.closePath(); ctx.fillStyle='#9A48E8'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); for(let i=0;i<6;i++){ const a=i*Math.PI/3-Math.PI/2; i?ctx.lineTo(Math.cos(a)*10,Math.sin(a)*10):ctx.moveTo(Math.cos(a)*10,Math.sin(a)*10); } ctx.closePath(); ctx.fillStyle='#D0A0FF'; ctx.fill();
+    ctx.strokeStyle='#D0A0FF'; ctx.lineWidth=1.5; for(let i=0;i<6;i++){ const a=i*Math.PI/3-Math.PI/2; ctx.beginPath(); ctx.moveTo(Math.cos(a)*10,Math.sin(a)*10); ctx.lineTo(Math.cos(a)*18,Math.sin(a)*18); ctx.stroke(); }
+  }
+  ctx.restore(); }
 const DISCO_RING=['#FF5CD0','#FF3838','#4C3FFF','#FFA030','#5CFF5C','#48E8FF','#B060FF','#9a9aa8'];
 const DISCO_FILL=['#5a1440','#4a0606','#141a5a','#3a2004','#0a3a0a','#0a3a4a','#2a0c40','#16161c'];
 function birdFace(s,expr,neon,col){
@@ -130,37 +178,44 @@ function birdFace(s,expr,neon,col){
   else { frr(-5*k,2*k,10*k,7*k,3.5*k,'#b8400a'); frr(-4*k,3*k,8*k,5*k,2.5*k,'#ff7a1a'); ctx.globalAlpha=.6; frr(-3*k,3.5*k,6*k,1.6*k,0.8*k,'#ffc890'); ctx.globalAlpha=1; }
 }
 function drawBlock(cx,cy,s,t,o){
-  o=o||{}; const T=TYPES[t]; ctx.save(); ctx.translate(Math.round(cx),Math.round(cy));
+  o=o||{}; const T=TH(t); ctx.save(); ctx.translate(Math.round(cx),Math.round(cy));
   const sc=o.scale||1; if(sc!==1) ctx.scale(sc,sc); if(o.rot) ctx.rotate(o.rot);
-  const h=s/2, expr=o.expr||0;
+  const h=s/2, expr=o.expr||0, g=0.5+0.5*Math.sin(appT*7+(cx+cy)*0.05), bomb=o.item===BOMB;
+  if(SAVE.food&&t<NCOL&&!o.disco){ // food set: icons straight on the checkerboard, bombs glow behind them
+    if(bomb){ ctx.save(); ctx.shadowColor=T.l; ctx.shadowBlur=14+14*g; ctx.globalAlpha=0.85; ctx.beginPath(); ctx.arc(0,0,h-1,0,Math.PI*2); ctx.fillStyle=T.l; ctx.fill(); ctx.restore(); }
+    drawFood(t,s);
+    if(bomb){ ctx.globalAlpha=0.35+0.55*g; ctx.lineWidth=3; ctx.strokeStyle='#ffffff'; ctx.beginPath(); ctx.arc(0,0,h-2,0,Math.PI*2); ctx.stroke(); ctx.globalAlpha=1; }
+    if(o.sel){ctx.lineWidth=2;ctx.strokeStyle='rgba(255,255,255,0.85)';rr(-h-1,-h-1,s+2,s+2,7);ctx.stroke();} ctx.restore(); return; }
+  if(t===WATERMELON){ const grow=expr<0?Math.min(1,(gameT+expr+1)/0.3):1; drawMelon(s,grow*(1+0.05*Math.sin(appT*6))); if(o.sel){ctx.lineWidth=2;ctx.strokeStyle='rgba(255,255,255,0.85)';rr(-h-1,-h-1,s+2,s+2,7);ctx.stroke();} ctx.restore(); return; }
+  if(t===DONUT_T){ drawDonutIcon(0,Math.sin(appT*3+cx*0.1)*1.5,s*1.05); if(o.sel){ctx.lineWidth=2;ctx.strokeStyle='rgba(255,255,255,0.85)';rr(-h-1,-h-1,s+2,s+2,7);ctx.stroke();} ctx.restore(); return; }
   if(o.disco){
     const ring=DISCO_RING[t]||T.c, fill=DISCO_FILL[t]||'#101018';
-    ctx.shadowColor=ring; ctx.shadowBlur=10; ctx.globalAlpha=.9; frr(-h,-h,s,s,8,ring); ctx.globalAlpha=1; ctx.shadowBlur=0;
+    ctx.shadowColor=ring; ctx.shadowBlur=bomb?16+16*g:10; ctx.globalAlpha=.9; frr(-h,-h,s,s,8,ring); ctx.globalAlpha=1; ctx.shadowBlur=0;
     frr(-h,-h,s,s,8,fill);
     ctx.lineWidth=7; ctx.strokeStyle=ring; ctx.globalAlpha=.35; rr(-h+1.5,-h+1.5,s-3,s-3,7); ctx.stroke(); ctx.globalAlpha=1;
     ctx.lineWidth=3; ctx.strokeStyle=ring; rr(-h+1.5,-h+1.5,s-3,s-3,7); ctx.stroke();
-    birdFace(s,expr,true,ring);
+    if(SAVE.food&&t<NCOL) drawFood(t,s*0.78); else birdFace(s,expr,true,ring);
   } else {
+    const bc=bomb?mixHex(T.c,'#ffffff',0.35*g):T.c; // bomb piyos pulse brighter
+    if(bomb){ ctx.save(); ctx.shadowColor=T.l; ctx.shadowBlur=14+14*g; ctx.globalAlpha=0.85; frr(-h-1,-h-1,s+2,s+2,s*0.2,T.l); ctx.restore(); } // glow halo
     frr(-h-1,-h-1,s+2,s+2,s*0.2,'#220301'); // 2px outline
-    frr(-h+1,-h+1,s-2,s-2,s*0.14,vgrad(-h+1,s-2,[mixHex(T.c,'#ffffff',0.22),T.c,mixHex(T.c,'#000000',0.16)])); // body gradient
-    frr(-h+3,-h+3,s-6,s*0.46,s*0.1,mixHex(T.c,'#ffffff',0.3)); // lighter face band (top half)
+    frr(-h+1,-h+1,s-2,s-2,s*0.14,vgrad(-h+1,s-2,[mixHex(bc,'#ffffff',0.22),bc,mixHex(bc,'#000000',0.16)])); // body gradient
+    frr(-h+3,-h+3,s-6,s*0.46,s*0.1,mixHex(bc,'#ffffff',0.3)); // lighter face band (top half)
     ctx.globalAlpha=.25; frr(-h+5,h-8,s-10,3,2,T.d); ctx.globalAlpha=1; // soft belly shade
     birdFace(s,expr,false,T.c);
+    if(bomb){ ctx.globalAlpha=0.35+0.55*g; ctx.lineWidth=3; ctx.strokeStyle='#ffffff'; rr(-h+2,-h+2,s-4,s-4,s*0.14); ctx.stroke(); ctx.globalAlpha=1; } // pulsing white rim
   }
-  if(o.item===BOMB) drawBombIcon(h*0.5,-h*0.5,s*0.55); else if(o.item===DONUT) drawDonutIcon(h*0.5,-h*0.5,s*0.55);
   if(o.sel){ctx.lineWidth=2;ctx.strokeStyle='rgba(255,255,255,0.85)';rr(-h-1,-h-1,s+2,s+2,7);ctx.stroke();}
   ctx.restore();
 }
-function drawBombIcon(x,y,s){ // round black bomb with a fuse and a flickering spark
-  const r=s*0.36; ctx.save(); ctx.translate(x,y);
-  ctx.strokeStyle='#15100f'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(r*0.3,-r*0.8); ctx.quadraticCurveTo(r*0.9,-r*1.5,r*1.3,-r*1.1); ctx.stroke();
-  ctx.strokeStyle='#e8c070'; ctx.lineWidth=2; ctx.stroke();
+function drawMelon(s,k){ // round striped watermelon with a stem; k = grow-in / pulse scale (a 4-match grows one, a tap explodes it)
+  const r=s*0.46*k; ctx.save(); ctx.rotate(Math.sin(appT*4)*0.06);
+  frr(-r*0.12,-r-4,r*0.24,r*0.34,2,'#15100f'); frr(-r*0.08,-r-3,r*0.16,r*0.26,1.5,'#7a4a12');
   ctx.beginPath(); ctx.arc(0,0,r+1.5,0,Math.PI*2); ctx.fillStyle='#15100f'; ctx.fill();
-  ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle='#2c2c38'; ctx.fill();
-  ctx.beginPath(); ctx.arc(-r*0.3,-r*0.3,r*0.34,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.fill();
-  frr(-r*0.35,-r-2,r*0.7,r*0.45,1,'#5a5a6a');
-  const fl=0.6+0.4*Math.sin(appT*25); ctx.beginPath(); ctx.arc(r*1.3,-r*1.1,r*0.36*fl+1.5,0,Math.PI*2); ctx.fillStyle='#ffe14d'; ctx.fill();
-  ctx.beginPath(); ctx.arc(r*1.3,-r*1.1,r*0.18,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+  ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle='#4cc94c'; ctx.fill();
+  ctx.save(); ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.clip(); ctx.strokeStyle='#1e7a2a'; ctx.lineWidth=r*0.2; ctx.lineCap='round';
+  for(let i=-2;i<=2;i++){ const x=i*r*0.42; ctx.beginPath(); ctx.moveTo(x,-r*1.1); ctx.quadraticCurveTo(x+r*0.3,0,x,r*1.1); ctx.stroke(); } ctx.restore();
+  ctx.beginPath(); ctx.arc(-r*0.35,-r*0.38,r*0.2,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.65)'; ctx.fill();
   ctx.restore(); }
 function drawDonutIcon(x,y,s){ // pink frosted ring doughnut with sprinkles
   const r=s*0.42; ctx.save(); ctx.translate(x,y);
@@ -252,6 +307,7 @@ const SFX={
     const g=ac.createGain(); g.gain.setValueAtTime(0.55,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.5); s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t+0.55);
     tone(170,0.4,'sine',0.35,t,-130); tone(95,0.5,'triangle',0.25,t+0.02,-60); },
   blast(i){ if(i>5) return; const t=ac?ac.currentTime+0.05+i*0.03:0; tone(320+i*30,0.09,'square',0.07,t,-180); },
+  melon(){ if(!ac) return; const t=ac.currentTime; tone(240,0.16,'sine',0.16,t,320); tone(480,0.12,'triangle',0.1,t+0.1,200); },
   donut(){ if(!ac) return; const t=ac.currentTime; [76,80,83,88,95].forEach((m,i)=>tone(mtof(m),0.14,'triangle',0.13,t+i*0.05)); tone(2400,0.25,'sine',0.05,t+0.2,1200); },
 };
 // music sequencer
@@ -363,24 +419,24 @@ const MODES=[
 ];
 
 // ---------- game state ----------
-const COLS=7,ROWS=8,CELL=44,BS=42,BX=6,BY=78;
+const COLS=7,ROWS=8,CELL=44,BS=42,BX=6,BY=78,CHK=58; // CHK: checkerboard square size
 let app='title', appT=0;
 let mode=null, grid=[], off=[], popP=[], sleepy=[], item=[], parts=[], booms=[];
 let phase='play', swp=null, idleT=0, hint=null, hintT=0;
 let score=0, level=1, combo=0, maxCombo=0, time=0, maxTime=30, moveTime=3, book=3;
 let tg=[], cnt=[], levelCap=0, luT=0, overT=0, discoT=0, shakeT=0, introT=0;
 let fx=[], banner=null, bg=null, sel=null, drag=null, gameT=0, hiNew=false, totalCaptured=0;
-let overlayBtnLock=0, flashT=0;
+let overlayBtnLock=0, flashT=0, lastSwap=null; const melonQ=new Set(); // cells that grow a watermelon once their pop finishes
 
 function numColours(){ if(!mode) return 6; if(mode.id==='piyo'||mode.id==='endless'||mode.id==='three') return level<3?6:7; return 6; }
-function rndType(){ return Math.random()<0.02?NINJA:Math.floor(Math.random()*numColours()); }
-const NONE=0,BOMB=1,DONUT=2; // items a piyo can carry
-function rndItem(t){ if(t===NINJA) return NONE; const r=Math.random(); return r<0.035?BOMB:(r<0.06?DONUT:NONE); }
+function rndType(){ const r=Math.random(); return r<0.02?NINJA:(r<0.035?DONUT_T:Math.floor(Math.random()*numColours())); }
+const NONE=0,BOMB=1; // a coloured piyo can carry a bomb: it glows, and matching it blows up every piyo of that colour
+function rndItem(t){ if(t>=NCOL) return NONE; return Math.random()<0.035?BOMB:NONE; }
 function isDisco(){return mode&&mode.id==='disco';}
 
 function newBoard(){
   for(let tries=0;tries<50;tries++){
-    grid=[];off=[];popP=[];sleepy=[];vel=[];item=[];
+    grid=[];off=[];popP=[];sleepy=[];vel=[];item=[]; melonQ.clear();
     for(let r=0;r<ROWS;r++){grid.push([]);off.push([]);popP.push([]);sleepy.push([]);vel.push([]);item.push([]);
       for(let c=0;c<COLS;c++){ let t; do{t=rndType();}while((c>=2&&grid[r][c-1]===t&&grid[r][c-2]===t)||(r>=2&&grid[r-1][c]===t&&grid[r-2][c]===t));
         grid[r].push(t); off[r].push(0); popP[r].push(-1); sleepy[r].push(rndExpr()); vel[r].push(0); item[r].push(rndItem(t));} }
@@ -396,7 +452,7 @@ function startGame(m){
   app='game'; buttons=[]; playMusic(isDisco()?'disco':'game');
 }
 function setupLevel(){
-  tg=[]; cnt=[0,0,0,0,0,0,0,0]; levelCap=0;
+  tg=[]; cnt=[0,0,0,0,0,0,0,0,0,0]; levelCap=0;
   const base=12+level*3;
   for(let i=0;i<NCOL;i++) tg.push(i<numColours()?base:0);
   if(mode.id==='piyo'||mode.id==='hyaku'){ maxTime=30; time=maxTime; }
@@ -461,34 +517,47 @@ function cellXY(r,c){return [BX+c*CELL+BS/2+2, BY+r*CELL+BS/2+2-off[r][c]];}
 
 function resolveMatches(){
   const m=findMatches(); if(!m.runs.length) return false;
-  combo++; if(combo>maxCombo) maxCombo=combo;
   const cells=new Set(m.cells);
-  // ninja neighbours pop with the match
+  // ninjas and donuts next to a match pop with it
   for(const idx of m.cells){const r=Math.floor(idx/COLS),c=idx%COLS;
     for(const [dr,dc] of [[0,1],[0,-1],[1,0],[-1,0]]){const r2=r+dr,c2=c+dc; if(r2<0||r2>=ROWS||c2<0||c2>=COLS) continue;
-      if(grid[r2][c2]===NINJA&&settled(r2,c2)) cells.add(r2*COLS+c2);}}
-  // bombs: a matched bomb blasts its 8 neighbours; blasted bombs chain
-  const queue=[]; for(const k of cells) if(item[Math.floor(k/COLS)][k%COLS]===BOMB) queue.push(k);
-  const blasted=new Set(), fired=[];
-  while(queue.length){ const k=queue.shift(); const r=Math.floor(k/COLS),c=k%COLS; fired.push([r,c]);
-    for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){ const r2=r+dr,c2=c+dc; if((!dr&&!dc)||r2<0||r2>=ROWS||c2<0||c2>=COLS) continue;
-      const k2=r2*COLS+c2; if(cells.has(k2)||grid[r2][c2]<0||popP[r2][c2]>=0||inSwap(r2,c2)) continue;
-      cells.add(k2); blasted.add(k2); if(item[r2][c2]===BOMB) queue.push(k2); } }
-  // capture everything at once: points depend on how many piyos go in one hit
+      if((grid[r2][c2]===NINJA||grid[r2][c2]===DONUT_T)&&settled(r2,c2)) cells.add(r2*COLS+c2);}}
+  // bombs: a matched glowing piyo blows up every piyo of its colour on the board
+  const blasted=new Set(), fired=[], bombCols=new Set();
+  for(const k of m.cells){ const r=Math.floor(k/COLS),c=k%COLS; if(item[r][c]===BOMB){ fired.push([r,c]); bombCols.add(grid[r][c]); } }
+  for(const t of bombCols) for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){ const k=r*COLS+c;
+    if(grid[r][c]!==t||cells.has(k)||popP[r][c]>=0||inSwap(r,c)) continue; cells.add(k); blasted.add(k); }
+  // a run of 4+ grows a watermelon where the player swapped (or in the middle of the run)
+  for(const run of m.runs) if(run.len>=4){ let at=run.cells[Math.floor(run.len/2)];
+    if(lastSwap) for(const c of run.cells) if((c[0]===lastSwap.a[0]&&c[1]===lastSwap.a[1])||(c[0]===lastSwap.b[0]&&c[1]===lastSwap.b[1])) at=c;
+    melonQ.add(at[0]*COLS+at[1]); }
+  const mid=m.runs[0].cells[Math.floor(m.runs[0].len/2)];
+  captureCells(cells,blasted,fired,cellXY(mid[0],mid[1]),Math.max(...m.runs.map(r=>r.len)));
+  lastSwap=null;
+  return true;
+}
+function explodeMelon(r,c){ // tap a watermelon: it and its 8 neighbours go
+  const cells=new Set([r*COLS+c]), blasted=new Set();
+  for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){ const r2=r+dr,c2=c+dc; if((!dr&&!dc)||r2<0||r2>=ROWS||c2<0||c2>=COLS) continue;
+    if(grid[r2][c2]<0||popP[r2][c2]>=0||inSwap(r2,c2)) continue; cells.add(r2*COLS+c2); blasted.add(r2*COLS+c2); }
+  captureCells(cells,blasted,[[r,c]],cellXY(r,c),0);
+}
+function captureCells(cells,blasted,fired,anchor,longest){ // everything in `cells` pops now; points depend on how many go in one hit
+  combo++; if(combo>maxCombo) maxCombo=combo;
   let captured=0, bonusTime=0, donuts=0, ninjas=0;
   for(const k of cells){ const r=Math.floor(k/COLS),c=k%COLS; const t=grid[r][c]; captured++; cnt[t]++; if(t<NCOL) tg[t]--; if(t===NINJA) ninjas++;
     const [x,y]=cellXY(r,c);
-    if(item[r][c]===DONUT){ donuts++; addFx(x,y-4,mode.id==='endless'?'DONUT +250':'+5 SEC','#ffe14d',1,'#7a2e0a'); spawnParts(x,y,14,['#ff8ec8','#ffffff','#ffe14d'],1.4); }
-    spawnParts(x,y,blasted.has(k)?4:5,[TYPES[t].l,TYPES[t].c],1);
+    if(t===DONUT_T){ donuts++; addFx(x,y-4,mode.id==='endless'?'DONUT +250':'+5 SEC','#ffe14d',1,'#7a2e0a'); spawnParts(x,y,14,['#ff8ec8','#ffffff','#ffe14d'],1.4); }
+    spawnParts(x,y,blasted.has(k)?6:5,[TH(t).l,TH(t).c],blasted.has(k)?1.5:1);
+    if(blasted.has(k)) booms.push({x,y,t:0,big:false});
     if(popP[r][c]<0) popP[r][c]=0; if(sel&&sel[0]===r&&sel[1]===c) sel=null; }
   const n=captured, pts=n*10*(n-2)*combo+ninjas*500+donuts*250; score+=pts;
-  const mid=m.runs[0].cells[Math.floor(m.runs[0].len/2)]; const [px,py]=cellXY(mid[0],mid[1]);
-  addFx(px,py-6,pts+(combo>1?' X'+combo:''),'#fff',1,'#000',true);
-  const longest=Math.max(...m.runs.map(r=>r.len));
+  const [px,py]=anchor;
+  addFx(px,py-6,'+'+pts+(combo>1?'X'+combo:''),'#fff',1,'#000',true);
   if(longest>=4){ bonusTime+=4; addFx(px,py+10,'+TIME','#ffe14d',1,'#7a2e0a'); }
   if(longest>=5) SFX.bonus();
   bonusTime+=donuts*5+ninjas*2;
-  for(const [r,c] of fired){ const [x,y]=cellXY(r,c); booms.push({x,y,t:0}); spawnParts(x,y,26,['#ffd23f','#ff8a2a','#ff3d3d','#ffffff'],2.2); }
+  for(const [r,c] of fired){ const [x,y]=cellXY(r,c); booms.push({x,y,t:0,big:true}); spawnParts(x,y,26,['#ffd23f','#ff8a2a','#ff3d3d','#ffffff'],2.2); }
   if(fired.length){ SFX.boom(); shakeT=Math.max(shakeT,0.35); flashT=0.18; let i=0; for(const k of blasted) SFX.blast(i++); }
   if(donuts) SFX.donut();
   totalCaptured+=captured; levelCap+=captured;
@@ -497,7 +566,6 @@ function resolveMatches(){
   if(combo>=2){ banner={txt:'COMBO X'+combo,life:1.0,t:0,col:'#ff8b2e'}; SFX.combo(combo); shakeT=Math.max(shakeT,Math.min(0.3,combo*0.05)); }
   let i=0; for(const k of cells) SFX.pop(combo,i++);
   hint=null; idleT=0;
-  return true;
 }
 function spawnParts(x,y,n,cols,pow){ for(let i=0;i<n;i++){ const a=Math.random()*Math.PI*2, sp=(60+Math.random()*160)*pow; parts.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-40*pow,life:0.45+Math.random()*0.4,col:cols[i%cols.length],sz:2+Math.random()*3*pow}); } }
 function compactAll(){
@@ -520,7 +588,7 @@ function trySwap(a,b){
 }
 function discoShift(){
   let changed=0;
-  for(let i=0;i<4;i++){const r=Math.floor(Math.random()*ROWS),c=Math.floor(Math.random()*COLS); if(!settled(r,c)||grid[r][c]===NINJA) continue; grid[r][c]=Math.floor(Math.random()*numColours()); popP[r][c]=-0.5; changed++;}
+  for(let i=0;i<4;i++){const r=Math.floor(Math.random()*ROWS),c=Math.floor(Math.random()*COLS); if(!settled(r,c)||grid[r][c]>=NCOL) continue; grid[r][c]=Math.floor(Math.random()*numColours()); popP[r][c]=-0.5; changed++;}
   if(changed) SFX.tick();
 }
 function gameOver(){
@@ -559,13 +627,13 @@ function update(dt){
     if(swp.t>=1){
       if(!swp.back){ const a=swp.a,b=swp.b; swp=null; swapCells(a,b);
         const ok=matchAt(a[0],a[1])||matchAt(b[0],b[1]);
-        if(ok){ if(mode.id==='three') moveTime=3; }
+        if(ok){ if(mode.id==='three') moveTime=3; lastSwap={a,b}; }
         else { swapCells(a,b); swp={a,b,t:0,back:true}; SFX.bad(); }
       } else { swp=null; }
     }
   }
   // ---- pops ----
-  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) if(popP[r][c]>=0){ popP[r][c]+=dt/0.22; if(popP[r][c]>=1){ popP[r][c]=-1; grid[r][c]=-1; } }
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) if(popP[r][c]>=0){ popP[r][c]+=dt/0.22; if(popP[r][c]>=1){ popP[r][c]=-1; const k=r*COLS+c; if(melonQ.has(k)){ melonQ.delete(k); grid[r][c]=WATERMELON; item[r][c]=NONE; sleepy[r][c]=-gameT-1; SFX.melon(); } else grid[r][c]=-1; } }
   compactAll();
   // ---- falling ----
   for(let c=0;c<COLS;c++){
@@ -611,7 +679,7 @@ function drawChecker(x0,y0,w,h,cols,S,t,dim){ // slowly drifting checkerboard cl
   if(dim){ ctx.fillStyle='rgba(0,0,0,'+dim+')'; ctx.fillRect(x0,y0,w,h); }
   ctx.restore();
 }
-function drawMargins(){ if(OX<1&&OY<1) return; drawChecker(0,0,VW,VH,checkerCols(),CELL,appT,0.55); } // iPad / wide screens: the board pattern continues past the phone frame
+function drawMargins(){ if(OX<1&&OY<1) return; drawChecker(0,0,VW,VH,checkerCols(),CHK,appT,0.55); } // iPad / wide screens: the board pattern continues past the phone frame
 function blob(x,y,w,h,col,shade){ // tall rounded bush lobe with darker lower half
   rr(x,y,w,h,Math.min(w,h)/2); ctx.fillStyle=col; ctx.fill();
   ctx.save(); ctx.clip(); ctx.fillStyle=shade; ctx.fillRect(x,y+h*0.55,w,h); ctx.restore();
@@ -706,15 +774,15 @@ function renderHelp(){
   frr(22,58,276,H-140,6,'#fff3e0');
   const L=['SWAP TWO PIYOS NEXT TO EACH','OTHER TO LINE UP 3 OR MORE OF','THE SAME COLOUR.','',
     'DRAG A PIYO, OR TAP ONE THEN','TAP ITS NEIGHBOUR. YOU CAN KEEP','SWAPPING WHILE PIYOS ARE FALLING!','',
-    'CAPTURE THE TARGET NUMBER OF','EACH PIYO (BOTTOM ROW) TO','LEVEL UP.','',
-    'THE CLOCK BAR DRAINS. EVERY','CAPTURE ADDS TIME. MATCH 4 OR','MORE FOR EXTRA TIME.','',
-    'MORE PIYOS IN ONE GO = MORE','POINTS. CASCADE COMBOS','MULTIPLY THE SCORE!','',
-    'BOMB PIYOS BLOW UP ALL 8','NEIGHBOURS WHEN MATCHED.','',
-    'DONUT PIYOS ADD 5 SECONDS','AND 250 POINTS.','',
-    'NINJA PIYOS (BLACK) POP WHEN','A NEIGHBOUR IS CAPTURED: +500.','',
+    'CAPTURE THE TARGET NUMBER OF','EACH PIYO (BOTTOM ROW) TO','LEVEL UP. THE CLOCK BAR DRAINS','AND EVERY CAPTURE ADDS TIME.','',
+    'MORE PIYOS IN ONE GO = MORE','POINTS. COMBOS MULTIPLY IT!','',
+    'MATCH 4 TO GROW A WATERMELON.','TAP IT TO BLOW UP ITS','NEIGHBOURS!','',
+    'GLOWING PIYOS ARE BOMBS: MATCH','ONE AND EVERY PIYO OF THAT','COLOUR EXPLODES!','',
+    'DONUTS POP WHEN A NEIGHBOUR','IS CAPTURED: +5 SEC, +250.','',
+    'NINJAS (BLACK) POP WHEN A','NEIGHBOUR IS CAPTURED: +500.','',
     'TAP THE BOOK FOR A HINT.'];
   for(let i=0;i<L.length;i++) drawText(L[i],30,68+i*13,1,'#3a1a10');
-  drawBlock(262,334,30,1,{item:BOMB}); drawBlock(262,374,30,0,{item:DONUT}); drawBlock(262,414,30,NINJA,{});
+  drawBlock(262,290,30,WATERMELON,{}); drawBlock(262,340,30,1,{item:BOMB}); drawBlock(262,392,30,DONUT_T,{}); drawBlock(262,432,30,NINJA,{});
   for(const b of buttons) drawBtn(b);
 }
 function renderOptions(){
@@ -736,7 +804,7 @@ function renderGame(){
   const disco=isDisco();
   if(!bg||bg.res!==BG_RES) bg=makeBg(level,disco);
   ctx.drawImage(bg,0,0,W,H);
-  if(disco) drawChecker(BX-1,BY-1,COLS*CELL,ROWS*CELL,checkerCols(),CELL,appT,0); else drawChecker(0,BY-4,W,ROWS*CELL+8,checkerCols(),CELL,appT,0);
+  if(disco) drawChecker(BX-1,BY-1,COLS*CELL,ROWS*CELL,checkerCols(),CHK,appT,0); else drawChecker(0,BY-4,W,ROWS*CELL+8,checkerCols(),CHK,appT,0);
   let sx=0,sy=0; if(shakeT>0){ const amp=shakeT>0.3?12:6; sx=(Math.random()-0.5)*amp; sy=(Math.random()-0.5)*amp; }
   ctx.save(); ctx.translate(sx,sy);
   // stopwatch: 24px, black outline, dark hands, button on top
@@ -759,7 +827,8 @@ function renderGame(){
   ctx.save(); ctx.beginPath(); ctx.rect(0,BY-4,W,ROWS*CELL+8); ctx.clip();
   const bounce=Math.sin(appT*2)*0.5;
   if(phase!=='levelup') for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
-    const t=grid[r][c]; if(t<0) continue;
+    const t=grid[r][c];
+    if(t<0){ if(phase==='play'){ const [ex,ey]=cellXY(r,c); ctx.save(); ctx.setLineDash([5,4]); ctx.lineDashOffset=-appT*30; ctx.lineWidth=2.5; ctx.strokeStyle='#4be8e0'; rr(ex-BS/2+2,ey-BS/2+2,BS-4,BS-4,6); ctx.stroke(); ctx.restore(); } continue; } // cleared cell waiting for a refill
     let [x,y]=cellXY(r,c); const o={disco,expr:sleepy[r][c],item:item[r][c]};
     if(swp){ const isA=swp.a[0]===r&&swp.a[1]===c, isB=swp.b[0]===r&&swp.b[1]===c;
       if(isA||isB){ const from=isA?swp.a:swp.b, to=isA?swp.b:swp.a; const [fx0,fy0]=cellXY(from[0],from[1]); const [tx,ty]=cellXY(to[0],to[1]);
@@ -773,8 +842,8 @@ function renderGame(){
   ctx.restore();
   // particles, bomb rings and the white blast flash
   for(const p of parts){ ctx.globalAlpha=Math.min(1,p.life*2.5); frr(p.x-p.sz/2,p.y-p.sz/2,p.sz,p.sz,p.sz*0.3,p.col); } ctx.globalAlpha=1;
-  for(const b of booms){ const k=b.t/0.5; ctx.globalAlpha=1-k; ctx.strokeStyle='#fff'; ctx.lineWidth=8*(1-k)+2; ctx.beginPath(); ctx.arc(b.x,b.y,10+k*70,0,Math.PI*2); ctx.stroke();
-    ctx.strokeStyle='#ff8a2a'; ctx.lineWidth=4*(1-k)+1; ctx.beginPath(); ctx.arc(b.x,b.y,4+k*54,0,Math.PI*2); ctx.stroke(); } ctx.globalAlpha=1;
+  for(const b of booms){ const k=b.t/0.5, R=b.big?70:26; ctx.globalAlpha=1-k; ctx.strokeStyle='#fff'; ctx.lineWidth=(b.big?8:5)*(1-k)+2; ctx.beginPath(); ctx.arc(b.x,b.y,(b.big?10:4)+k*R,0,Math.PI*2); ctx.stroke();
+    ctx.strokeStyle='#ff8a2a'; ctx.lineWidth=(b.big?4:2)*(1-k)+1; ctx.beginPath(); ctx.arc(b.x,b.y,(b.big?4:2)+k*R*0.75,0,Math.PI*2); ctx.stroke(); } ctx.globalAlpha=1;
   if(flashT>0){ ctx.globalAlpha=Math.min(1,flashT*3); ctx.fillStyle='#fff'; ctx.fillRect(0,BY-4,W,ROWS*CELL+8); ctx.globalAlpha=1; }
   // fx: score pops in dark boxes, bonus text in gold
   for(const f of fx){ ctx.globalAlpha=Math.min(1,f.life*2);
@@ -836,6 +905,7 @@ function gotoTitle(){ app='title'; buttons=[]; uiLockUntil=performance.now()+250
 }
 function gotoModes(){ app='modes'; buttons=[]; uiLockUntil=performance.now()+250; hovMode=-1;
   MODES.forEach((m,i)=>{ const col=i%2,row=Math.floor(i/2); addBtn(22+col*148,74+row*124,140,64,m.name,()=>startGame(m)); });
+  addBtn(70,396,180,34,'BLOCKS: '+(SAVE.food?'FOOD':'PIYO'),()=>{SAVE.food=!SAVE.food; save(); SFX.click(); gotoModes();},SAVE.food?'#2E9A3C':undefined);
   addBtn(100,H-60,120,28,'BACK',()=>gotoTitle());
 }
 function gotoOptions(){ app='options'; buttons=[]; uiLockUntil=performance.now()+250;
@@ -861,6 +931,7 @@ cv.addEventListener('pointerdown',e=>{
   if(x>=266&&x<=316&&y<=36){ pauseGame(); SFX.click(); return; }
   if(x>=258&&x<=304&&y>=BY+ROWS*CELL){ if(book>0&&!hint&&boardCalm()){ hint=findMove(); hintT=0; if(hint){book--; SFX.click();} } return; }
   const cl=cellAt(x,y); if(!cl) return;
+  if(grid[cl[0]][cl[1]]===WATERMELON&&settled(cl[0],cl[1])){ explodeMelon(cl[0],cl[1]); sel=null; drag=null; return; }
   if(sel&&Math.abs(sel[0]-cl[0])+Math.abs(sel[1]-cl[1])===1){ trySwap(sel,cl); drag=null; return; }
   if(!settled(cl[0],cl[1])) return;
   sel=cl; drag={cell:cl,x,y}; SFX.select(); idleT=0;
