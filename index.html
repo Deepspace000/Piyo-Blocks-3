@@ -208,14 +208,14 @@ function drawBlock(cx,cy,s,t,o){
   if(o.sel){ctx.lineWidth=2;ctx.strokeStyle='rgba(255,255,255,0.85)';rr(-h-1,-h-1,s+2,s+2,7);ctx.stroke();}
   ctx.restore();
 }
-function drawMelon(s,k){ // round striped watermelon with a stem; k = grow-in / pulse scale (a 4-match grows one, a tap explodes it)
-  const r=s*0.46*k; ctx.save(); ctx.rotate(Math.sin(appT*4)*0.06);
-  frr(-r*0.12,-r-4,r*0.24,r*0.34,2,'#15100f'); frr(-r*0.08,-r-3,r*0.16,r*0.26,1.5,'#7a4a12');
-  ctx.beginPath(); ctx.arc(0,0,r+1.5,0,Math.PI*2); ctx.fillStyle='#15100f'; ctx.fill();
-  ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle='#4cc94c'; ctx.fill();
-  ctx.save(); ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.clip(); ctx.strokeStyle='#1e7a2a'; ctx.lineWidth=r*0.2; ctx.lineCap='round';
-  for(let i=-2;i<=2;i++){ const x=i*r*0.42; ctx.beginPath(); ctx.moveTo(x,-r*1.1); ctx.quadraticCurveTo(x+r*0.3,0,x,r*1.1); ctx.stroke(); } ctx.restore();
-  ctx.beginPath(); ctx.arc(-r*0.35,-r*0.38,r*0.2,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.65)'; ctx.fill();
+function drawMelon(s,k){ // squarish watermelon with rounded corners, dark stripes and a stem; k = grow-in / pulse scale (a 4-match grows one, a tap explodes it)
+  const w=s*0.92*k, h=w/2, R=w*0.32; ctx.save(); ctx.rotate(Math.sin(appT*4)*0.05);
+  frr(-w*0.06,-h-4,w*0.12,h*0.34,2,'#15100f'); frr(-w*0.04,-h-3,w*0.08,h*0.26,1.5,'#7a4a12'); // stem
+  frr(-h-1.5,-h-1.5,w+3,w+3,R+1.5,'#15100f'); // outline
+  frr(-h,-h,w,w,R,'#4cc94c');
+  ctx.save(); rr(-h,-h,w,w,R); ctx.clip(); ctx.strokeStyle='#1e7a2a'; ctx.lineWidth=w*0.11; ctx.lineCap='round';
+  for(let i=-2;i<=2;i++){ const x=i*w*0.22; ctx.beginPath(); ctx.moveTo(x,-h*1.1); ctx.quadraticCurveTo(x+w*0.14,0,x,h*1.1); ctx.stroke(); } ctx.restore();
+  ctx.globalAlpha=.6; frr(-h+w*0.12,-h+w*0.1,w*0.3,w*0.14,w*0.07,'#ffffff'); ctx.globalAlpha=1; // gloss
   ctx.restore(); }
 function drawDonutIcon(x,y,s){ // pink frosted ring doughnut with sprinkles
   const r=s*0.42; ctx.save(); ctx.translate(x,y);
