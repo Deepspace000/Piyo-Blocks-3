@@ -1,6 +1,6 @@
 {
- "name": "Piyo Blocks",
- "short_name": "Piyo Blocks",
+ "name": "Piyo Blocks 3",
+ "short_name": "Piyo Blocks 3",
  "description": "Cute match-3 puzzle. Swap the Piyos, capture the targets, chain combos!",
  "start_url": "./index.html",
  "scope": "./",

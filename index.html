@@ -2,12 +2,12 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Piyo Blocks</title>
+<title>Piyo Blocks 3</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Piyo Blocks">
+<meta name="apple-mobile-web-app-title" content="Piyo Blocks 3">
 <meta name="theme-color" content="#ff4f9c">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -137,7 +137,8 @@ function drawBlock(cx,cy,s,t,o){
     ctx.lineWidth=1; ctx.strokeStyle=T.l; rr(-h+5,-h+5,s-10,s-10,3); ctx.globalAlpha=.5; ctx.stroke(); ctx.globalAlpha=1;
     birdFace(s,expr,true,T.c);
   } else {
-    frr(-h,-h,s,s,s*0.18,T.d);            // dark outline
+    frr(-h-1,-h-1,s+2,s+2,s*0.2,'#15100f'); // black outline
+    frr(-h+1,-h+1,s-2,s-2,s*0.16,T.d);        // colour rim
     frr(-h+3,-h+3,s-6,s-6,s*0.12,T.c);    // body
     frr(-h+5,-h+5,s-10,s*0.46,s*0.1,T.l); // lighter face band (top half)
     ctx.globalAlpha=.25; frr(-h+5,h-8,s-10,3,2,T.d); ctx.globalAlpha=1; // soft belly shade
@@ -303,7 +304,7 @@ function drawBtn(b,pressed){
   frr(b.x+3,b.y+3,b.w-6,b.h-6,6,c);
   ctx.globalAlpha=.3; frr(b.x+6,b.y+6,b.w-12,5,2,'#fff'); ctx.globalAlpha=1;
   const sc=b.sc||(b.h>=34?2:1);
-  drawTextO(b.label,b.x+b.w/2,b.y+(b.h-5*sc)/2,sc,'#fff6e0','#7a2e0a','center',1);
+  drawTextO(b.label,b.x+b.w/2,b.y+(b.h-5*sc)/2,sc,'#fff3d6','#5a2a10','center',1);
 }
 function hitBtn(x,y){if(performance.now()<uiLockUntil) return null; for(const b of buttons) if(x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h) return b; return null;}
 
@@ -328,7 +329,7 @@ let fx=[], banner=null, bg=null, sel=null, drag=null, gameT=0, hiNew=false, tota
 let overlayBtnLock=0;
 
 function numColours(){ if(!mode) return 6; if(mode.id==='piyo'||mode.id==='endless'||mode.id==='three') return level<3?6:7; return 6; }
-function rndType(){ return Math.random()<0.035?NINJA:Math.floor(Math.random()*numColours()); }
+function rndType(){ return Math.random()<0.02?NINJA:Math.floor(Math.random()*numColours()); }
 function isDisco(){return mode&&mode.id==='disco';}
 
 function newBoard(){
@@ -373,7 +374,7 @@ function levelComplete(){
 let vel=[];
 function inSwap(r,c){return !!(swp&&((swp.a[0]===r&&swp.a[1]===c)||(swp.b[0]===r&&swp.b[1]===c)));}
 function settled(r,c){ return grid[r][c]>=0 && off[r][c]===0 && popP[r][c]<0 && !inSwap(r,c); }
-function boardCalm(){ if(swp) return false; for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) if(grid[r][c]<0||off[r][c]>0||popP[r][c]>=0) return false; return true; }
+function boardCalm(){ if(!grid.length) return true; if(swp) return false; for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++) if(grid[r][c]<0||off[r][c]>0||popP[r][c]>=0) return false; return true; }
 function findMatches(){
   const cells=new Set(), runs=[];
   for(let r=0;r<ROWS;r++){let c=0; while(c<COLS){ if(!settled(r,c)){c++;continue;} const t=grid[r][c]; let e=c; while(e+1<COLS&&settled(r,e+1)&&grid[r][e+1]===t) e++; const len=e-c+1;
@@ -534,28 +535,54 @@ function render(){
   else if(app==='options') renderOptions();
   else renderGame();
 }
-function drawLogo(y){
-  const backs=[[44,0],[100,2],[160,5],[220,3],[276,1]];
-  for(let i=0;i<backs.length;i++){ const bob=Math.abs(Math.sin(appT*3+i*1.1))*-3; drawBlock(backs[i][0],y-10+bob,40,backs[i][1],{expr:i===2?2:0}); }
-  chunkyText('PIYO BLOCKS',160,y+12,5,26,'center',5);
+function blob(x,y,w,h,col,shade){ // tall rounded bush lobe with darker lower half
+  rr(x,y,w,h,Math.min(w,h)/2); ctx.fillStyle=col; ctx.fill();
+  ctx.save(); ctx.clip(); ctx.fillStyle=shade; ctx.fillRect(x,y+h*0.55,w,h); ctx.restore();
 }
+function drawTitleScene(t){
+  // sky with pink haze at the horizon (PB1 title)
+  const g=ctx.createLinearGradient(0,0,0,H); g.addColorStop(0,'#16307c'); g.addColorStop(0.16,'#2a5fc0'); g.addColorStop(0.32,'#4aa0ea'); g.addColorStop(0.46,'#8fcff6'); g.addColorStop(0.56,'#f0c8dc'); g.addColorStop(0.62,'#f7dbe8'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  // clouds
+  for(const [x,y,w] of [[236,26,96],[214,102,60],[-6,196,44],[100,232,50]]){ cloudPath(x,y,w); ctx.fillStyle='#fff'; ctx.fill(); }
+  // far pale hill band
+  ctx.fillStyle='#9fdc6c'; ctx.beginPath(); ctx.moveTo(0,H); ctx.lineTo(0,300); ctx.quadraticCurveTo(160,262,320,296); ctx.lineTo(W,H); ctx.fill();
+  // tall pale bushes, left and right clusters
+  for(const [x,y,w,h] of [[-20,236,52,150],[22,252,44,130],[206,240,48,140],[244,226,52,156],[286,246,50,140]]) blob(x,y,w,h,'#b4e88a','#8fd45e');
+  // mid hill
+  ctx.fillStyle='#7ccf4e'; ctx.beginPath(); ctx.ellipse(160,392,240,60,0,0,Math.PI*2); ctx.fill();
+  // three rows of scalloped leaves
+  const rows=[[398,'#63c93c','#2f8a2a',-6],[436,'#58c437','#2a7f25',12],[472,'#4cb830','#25742a',-6]];
+  for(const [by,col,out,x0] of rows){
+    for(let i=0;i<10;i++){ const x=x0+i*38; ctx.beginPath(); ctx.arc(x,by,22,0,Math.PI*2); ctx.fillStyle=out; ctx.fill(); }
+    for(let i=0;i<10;i++){ const x=x0+i*38; ctx.beginPath(); ctx.arc(x,by,19,0,Math.PI*2); ctx.fillStyle=col; ctx.fill(); ctx.beginPath(); ctx.arc(x-6,by-7,7,0,Math.PI*2); ctx.fillStyle='#8ee06a'; ctx.fill(); }
+  }
+}
+function drawLogo(y){ // PB2 lockup: small blocks on top, PIYOBLOCKS letters, big orange 2
+  const backs=[[30,0],[78,3],[124,5],[170,3],[214,1]];
+  for(let i=0;i<backs.length;i++){ const bob=Math.abs(Math.sin(appT*3+i*1.1))*-3; drawBlock(backs[i][0],y-14+bob,36,backs[i][1],{expr:i===2?2:0}); }
+  chunkyText('PIYOBLOCKS',134,y+12,5,25,'center',2);
+  chunkyText('3',286,y+2,9,54,'center',0);
+  chunkyText('NUS VERSION',160,y+52,2,13,'center',0);
+}
+function squareBtn(b){ // big orange square block button with a giant glyph and a label beneath
+  frr(b.x,b.y+4,b.w,b.h,8,'#7a2e0a'); frr(b.x,b.y,b.w,b.h,8,'#b0400c'); frr(b.x+4,b.y+4,b.w-8,b.h-8,6,b.dim?'#c86a3a':'#f26a1c');
+  ctx.globalAlpha=.35; frr(b.x+7,b.y+7,b.w-14,10,4,'#fff'); ctx.globalAlpha=1;
+  if(b.icon==='gear'){ const cx=b.x+b.w/2, cy=b.y+b.h/2; ctx.save(); ctx.translate(cx,cy); ctx.rotate(appT*0.6); ctx.fillStyle='#5a2a10'; for(let k=0;k<8;k++){ ctx.rotate(Math.PI/4); ctx.fillRect(-4,-21,8,10); } ctx.beginPath(); ctx.arc(0,0,15,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff3d6'; ctx.beginPath(); ctx.arc(0,0,11,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#5a2a10'; ctx.beginPath(); ctx.arc(0,0,5,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+  else drawTextO(b.glyph,b.x+b.w/2,b.y+(b.h-5*b.gsc)/2+1,b.gsc,'#fff3d6','#5a2a10','center',2,'#5a2a10');
+  drawTextO(b.label,b.x+b.w/2,b.y+b.h+9,b.lsc||1,'#fff3d6','#5a2a10','center',1);
+}
+function drawHook(x,y,w,h){ frr(x,y,w,h,3,'#7a4a08'); frr(x+2,y+2,w-4,h-4,2,'#f7c236'); frr(x+3,y+3,w-6,3,1,'#ffe69a'); }
+let titleToast=0;
 function renderTitle(){
-  drawSkyBg(appT);
-  drawLogo(38);
-  // tall rounded bushes flanking the sign
-  for(const [bx,by,bw,bh] of [[-6,170,54,150],[272,160,56,160],[30,215,40,100],[250,225,44,100]]){ rr(bx,by,bw,bh,bw/2); ctx.fillStyle='#8fe07f'; ctx.fill(); ctx.strokeStyle='#2f9e32'; ctx.lineWidth=3; ctx.stroke(); rr(bx+6,by+8,bw*0.35,bh*0.4,bw*0.17); ctx.fillStyle='#c9f7ae'; ctx.fill(); }
-  drawSign(38,146,244,160);
-  // yellow bracket hooks
-  for(const hx of [26,278]){ frr(hx,196,16,60,4,'#7a2e0a'); frr(hx+3,199,10,54,3,'#ffd43a'); frr(hx+3,199,10,6,2,'#fff0a0'); }
-  frr(62,300,20,52,3,'#c85a12'); frr(65,303,14,46,2,'#f7941d'); frr(238,300,20,52,3,'#c85a12'); frr(241,303,14,46,2,'#f7941d');
-  for(const b of buttons) drawBtn(b);
-  // hi score plaque
-  frr(74,338,216,52,8,'#7A1A3A'); frr(77,341,210,46,6,'#F04A78'); ctx.globalAlpha=.25; frr(82,345,200,5,2,'#fff'); ctx.globalAlpha=1;
-  chunkyText('HI SCORE',182,346,3,17,'center',0);
-  const best=Math.max(0,...Object.values(SAVE.hi)); drawTextO(pad(best,6),182,368,2,'#FFFFFF','#7A1A3A','center',1);
-  drawBlock(6,246,34,0,{expr:1}); drawBlock(-8,284,34,2,{});
-  drawGirl(-22,352,0.9,Math.sin(appT*3)*3);
-  drawBlock(258,H-62,38,4,{expr:1}); drawBlock(300,H-70,38,5,{}); drawBlock(280,H-28,38,0,{});
+  drawTitleScene(appT);
+  drawLogo(44);
+  for(const b of buttons) squareBtn(b);
+  // pink HI SCORE banner
+  frr(78,296,164,62,8,'#a8285a'); frr(82,300,156,54,6,'#f06a9a'); ctx.globalAlpha=.3; frr(86,304,148,5,2,'#fff'); ctx.globalAlpha=1;
+  const best=Math.max(0,...Object.values(SAVE.hi)); frr(104,306,112,18,9,'#fff'); drawText(pad(best,6),160,310,2,'#e83e5c','center');
+  chunkyText('HI SCORE',160,330,3,17,'center',0);
+  // peeking blocks in the bushes
+  drawBlock(284,250,30,3,{expr:0}); drawBlock(14,268,26,5,{expr:1});
 }
 function renderModes(){
   drawSkyBg(appT,{ground:0.5});
@@ -589,7 +616,7 @@ function renderOptions(){
   drawTextO('OPTIONS',160,12,3,goldGrad(12,15),'#fff6e0','center',2,'#2b1a14');
   drawSign(10,42,300,390);
   for(const b of buttons) drawBtn(b);
-  drawText('PIYO BLOCKS FAN PROTOTYPE',160,H-40,1,'#fff6e0','center');
+  drawText('PIYO BLOCKS 3 - NUS VERSION',160,H-40,1,'#fff6e0','center');
   drawText('ORIGINAL BY BIG PIXEL STUDIOS',160,H-28,1,'#fff6e0','center');
 }
 function drawBook(x,y,n){ // orange book, cream page edge, red glyph
@@ -680,9 +707,10 @@ function renderGame(){
 
 // ---------- screens / navigation ----------
 function gotoTitle(){ app='title'; buttons=[]; uiLockUntil=performance.now()+250; playMusic('title');
-  addBtn(62,164,196,36,'PLAY',()=>gotoModes());
-  addBtn(62,208,196,36,'HELP',()=>{app='help'; buttons=[]; uiLockUntil=performance.now()+250; addBtn(100,400,120,28,'BACK',()=>gotoTitle());});
-  addBtn(62,252,196,36,'OPTIONS',()=>gotoOptions());
+  const sq=(x,y,label,glyph,gsc,cb,extra)=>{ addBtn(x,y,60,60,label,cb); Object.assign(buttons[buttons.length-1],{glyph,gsc},extra||{}); };
+  sq(130,122,'PLAY','1',8,()=>gotoModes());
+  sq(88,214,'HELP','?',8,()=>{app='help'; buttons=[]; uiLockUntil=performance.now()+250; addBtn(100,400,120,28,'BACK',()=>gotoTitle());});
+  sq(172,214,'OPTIONS','',8,()=>gotoOptions(),{icon:'gear'});
 }
 function gotoModes(){ app='modes'; buttons=[]; uiLockUntil=performance.now()+250; hovMode=-1;
   MODES.forEach((m,i)=>{ const col=i%2,row=Math.floor(i/2); addBtn(22+col*148,66+row*98,140,56,m.name,()=>startGame(m)); });

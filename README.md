@@ -1,4 +1,4 @@
-# Piyo Blocks (fan prototype)
+# Piyo Blocks 3 - Nus Version (fan prototype)
 
 A single-player, touch-first homage to Big Pixel Studios' *Piyo Blocks* (iOS, 2009), rebuilt as one HTML file.
 
