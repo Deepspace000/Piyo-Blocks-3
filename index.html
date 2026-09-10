@@ -154,26 +154,27 @@ function drawBlock(cx,cy,s,t,o){
 function rndExpr(){ const r=Math.random(); return r<0.06?1:(r<0.14?2:0); }
 
 // ---------- Piyo the girl (vector shapes in a 100x150 unit box, thick white ring) ----------
-const GIRL=[ // [kind, ...params, colour]; drawn in order
- ['rr',2,62,16,74,7,'#E8304C'],          // left hair tail
- ['rr',82,62,16,74,7,'#E8304C'],         // right hair tail
- ['rr',10,8,80,80,26,'#E8304C'],         // bob helmet
- ['rr',14,12,72,22,12,'#FF6A85'],        // lighter band
- ['rr',43,0,14,13,6,'#FFD23A'],          // crest
- ['rr',24,38,52,50,10,'#F0883C'],        // face
- ['rr',33,50,7,19,2,'#2A1418'],          // eyes
- ['rr',60,50,7,19,2,'#2A1418'],
- ['rr',45,77,10,4,1,'#2A1418'],          // mouth
- ['rr',28,86,44,52,8,'#F07020'],         // dress
- ['rr',35,90,4,44,1,'#D05010'],          // stripes
- ['rr',61,90,4,44,1,'#D05010'],
- ['rr',40,96,20,26,3,'#FFE0B0'],         // apron
- ['rr',33,134,12,18,3,'#F07020'],        // legs
- ['rr',55,134,12,18,3,'#F07020'],
- ['rr',31,148,16,8,3,'#2A1418'],         // shoes
- ['rr',53,148,16,8,3,'#2A1418'],
- ['line',72,98,58,80,11,'#F07020'],      // arm, hand to chin
- ['block',86,52,22,3],                   // hair clip block
+const GIRL=[ // [kind, ...params, colour]; 100x150 unit box, drawn in order
+ ['rr',14,70,9,72,4,'#FF2F4C'],          // left tail (thin)
+ ['rr',77,70,9,72,4,'#FF2F4C'],          // right tail
+ ['rr',20,4,60,94,22,'#FF2F4C'],         // helmet (portrait)
+ ['rr',24,14,52,9,4,'#FF8CA0'],          // lighter band
+ ['rr',44,0,12,11,5,'#FFD23F'],          // crest
+ ['rr',31,42,38,46,9,'#EE7540'],         // face
+ ['rr',39,52,4,14,1.5,'#2A1418'],        // eyes
+ ['rr',57,52,4,14,1.5,'#2A1418'],
+ ['rr',47,78,6,3,1,'#3A1000'],           // mouth
+ ['rr',31,96,38,46,7,'#F07030'],         // dress
+ ['rr',37,100,3,38,1,'#C85020'],         // stripes
+ ['rr',48,100,3,38,1,'#C85020'],
+ ['rr',59,100,3,38,1,'#C85020'],
+ ['rr',41,104,18,22,3,'#FFF0D8'],        // apron
+ ['rr',23,98,8,34,4,'#F07030'],          // left arm hanging
+ ['rr',36,140,10,12,3,'#F07030'],        // legs
+ ['rr',54,140,10,12,3,'#F07030'],
+ ['line',70,118,58,84,8,'#F07030'],      // right forearm to chin
+ ['rr',52,78,12,12,6,'#F07030'],         // fist over the mouth
+ ['block',82,50,13,3],                   // hair clip block on the helmet edge
 ];
 function drawGirl(x,y,sc,bob){
   ctx.save(); ctx.translate(x,y+(bob||0)); ctx.scale(sc,sc);
@@ -247,20 +248,21 @@ function musicUpdate(){
 }
 
 // ---------- backgrounds ----------
-const PALS=[['#ff3a8c','#ff7ab8'],['#ff6410','#ffa055'],['#1fa0ff','#78ccff'],['#33c033','#84e068'],['#9040e8','#c89cff'],['#ffb000','#ffd860'],['#ff2848','#ff8494'],['#0fb8b0','#68e0d8']];
+const PALS=[['#FF7DA0','#FF9FD5'],['#ff6410','#ffa055'],['#1fa0ff','#78ccff'],['#33c033','#84e068'],['#9040e8','#c89cff'],['#ffb000','#ffd860'],['#ff2848','#ff8494'],['#0fb8b0','#68e0d8']];
 function makeBg(level,disco){
   const o=document.createElement('canvas'); o.width=W; o.height=H; const c=o.getContext('2d');
   const pal=disco?['#12101e','#1e1a34']:PALS[(level-1)%PALS.length];
   c.fillStyle=pal[0]; c.fillRect(0,0,W,H);
   c.fillStyle=pal[1];
-  if(!disco&&level%2===1){ for(let y=0;y<H;y+=24) c.fillRect(0,y,W,12); }   // horizontal bands (level 1 look)
+  if(!disco&&level%2===1){ for(let y=60;y<H;y+=48) c.fillRect(0,y,W,24); }   // horizontal bands (level 1 look)
+  if(!disco){ c.fillStyle=level%2===1?'#E8066A':'rgba(0,0,0,0.18)'; c.fillRect(0,0,W,BY-16); c.fillRect(0,BY+ROWS*CELL+10,W,H); }
   else for(let y=-8;y<H;y+=34)for(let x=-8;x<W;x+=34){                           // block-face silhouettes
     c.beginPath(); c.roundRect? c.roundRect(x,y,24,24,4):c.rect(x,y,24,24); c.fill();
     c.fillStyle=pal[0]; c.fillRect(x+6,y+8,4,4); c.fillRect(x+14,y+8,4,4); c.fillRect(x+9,y+16,6,2); c.fillStyle=pal[1];
   }
   // subtle board panel (PB2 style): faint dark rounded rect with 1px edge
   c.fillStyle=disco?'rgba(255,255,255,0.08)':'rgba(255,255,255,0.28)'; c.beginPath(); c.roundRect?c.roundRect(BX-3,BY-3,COLS*CELL+4,ROWS*CELL+4,7):c.rect(BX-3,BY-3,COLS*CELL+4,ROWS*CELL+4); c.fill();
-  c.strokeStyle='rgba(43,26,20,0.45)'; c.lineWidth=2; c.stroke();
+  c.strokeStyle='rgba(192,64,112,0.5)'; c.lineWidth=1; c.stroke();
   return o;
 }
 function cloudPath(x,y,w){ ctx.beginPath(); ctx.arc(x,y,w*0.26,0,Math.PI*2); ctx.arc(x+w*0.3,y-w*0.14,w*0.34,0,Math.PI*2); ctx.arc(x+w*0.64,y-w*0.02,w*0.27,0,Math.PI*2); ctx.rect(x-w*0.05,y,w*0.75,w*0.26); }
@@ -582,7 +584,7 @@ function squareBtn(b){
   glossyPanel(b.x,b.y,b.w,b.h,14,'#b0400c','#f26a1c','#ff9a3a');
   if(b.icon==='gear'){ const cx=b.x+b.w/2, cy=b.y+b.h/2+2; ctx.save(); ctx.translate(cx,cy); ctx.rotate(appT*0.6); ctx.fillStyle='#15100f'; for(let k=0;k<8;k++){ ctx.rotate(Math.PI/4); ctx.fillRect(-5,-24,10,12); } ctx.beginPath(); ctx.arc(0,0,17,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff3d6'; ctx.beginPath(); ctx.arc(0,0,13,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#15100f'; ctx.beginPath(); ctx.arc(0,0,5,0,Math.PI*2); ctx.fill(); ctx.restore(); }
   else chunkyText(b.glyph,b.x+b.w/2,b.y+(b.h-6*b.gsc)/2+2,b.gsc,6*b.gsc+6,'center',0);
-  drawTextO(b.label,b.x+b.w/2,b.y+b.h+11,b.lsc||1,'#fff3d6','#15100f','center',1,'#15100f');
+  drawTextO(b.label,b.x+b.w/2,b.y+b.h+12,2,'#ffffff','#2A0A00','center',1,'#2A0A00');
 }
 function drawHook(x,y,w,h){ frr(x,y,w,h,3,'#7a4a08'); frr(x+2,y+2,w-4,h-4,2,'#f7c236'); frr(x+3,y+3,w-6,3,1,'#ffe69a'); }
 let titleToast=0;
@@ -650,12 +652,12 @@ function renderGame(){
   ctx.beginPath(); ctx.arc(19,18,12.5,0,Math.PI*2); ctx.fillStyle='#15100f'; ctx.fill(); ctx.beginPath(); ctx.arc(19,18,10.5,0,Math.PI*2); ctx.fillStyle='#8a8a8a'; ctx.fill(); ctx.beginPath(); ctx.arc(19,18,8.5,0,Math.PI*2); ctx.fillStyle='#F4F4F4'; ctx.fill(); ctx.globalAlpha=.6; ctx.beginPath(); ctx.arc(16,14,3.5,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.globalAlpha=1;
   ctx.strokeStyle='#e8323c'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(19,18); ctx.lineTo(19,12); ctx.moveTo(19,18); ctx.lineTo(23,20); ctx.stroke(); ctx.fillStyle='#3A3A3A'; ctx.fillRect(17,4,4,4); ctx.fillRect(15,3,8,2);
   // timer bar
-  frr(34,5,246,24,6,'#15100f'); frr(36,7,242,20,4,'#7A2A10'); frr(38,9,238,16,3,disco?'#1a1a2e':'#5A1E0C');
+  frr(34,5,246,24,6,'#15100f'); frr(36,7,242,20,4,'#A34E29'); frr(38,9,238,16,3,disco?'#1a1a2e':'#3A0010');
   let frac=1; if(mode.id==='three') frac=moveTime/3; else if(mode.id==='endless') frac=1; else frac=time/maxTime;
   frac=Math.max(0,Math.min(1,frac));
-  let barCol=disco?'#4cc3ff':'#F04A28'; if(mode.id!=='endless'&&frac<0.25&&Math.floor(appT*6)%2===0) barCol='#ffd23a';
+  let barCol=disco?'#94FEF0':'#FFEABF'; if(mode.id!=='endless'&&frac<0.25&&Math.floor(appT*6)%2===0) barCol='#ffd23a';
   if(mode.id==='endless'){ const g=ctx.createLinearGradient(38,0,276,0); ['#ff62ad','#ffd23f','#63d63c','#4cc3ff'].forEach((c,i)=>g.addColorStop(i/3,c)); barCol=g; }
-  if(frac>0){ const bw=Math.max(8,238*frac); frr(38,9,bw,16,3,barCol); frr(38+Math.max(0,bw-14),9,Math.min(14,bw),16,3,disco?'#a8e8ff':'#FF8A50'); ctx.globalAlpha=.35; frr(40,11,Math.max(2,bw-4),3,1,'#fff'); ctx.globalAlpha=1; }
+  if(frac>0){ const bw=Math.max(8,238*frac); frr(38,9,bw,16,3,barCol); frr(38+Math.max(0,bw-12),9,Math.min(12,bw),16,3,disco?'#4cc3ff':'#FF5E3E'); ctx.globalAlpha=.6; frr(40,10,Math.max(2,bw-4),2,1,'#fff'); ctx.globalAlpha=1; }
   // pause: square orange button
   frr(284,5,28,26,6,'#15100f'); frr(286,7,24,22,4,'#b0400c'); frr(288,9,20,18,3,'#f79a2e'); frr(290,11,16,6,2,'#ffbf70'); ctx.fillStyle='#fff6e0'; ctx.fillRect(293,13,3,11); ctx.fillRect(300,13,3,11);
   drawTextO('SCORE',22,44,2,'#fff6e0','#2b1a14','left',1,'#2b1a14'); drawTextO(pad(score,6),96,44,2,'#fff6e0','#2b1a14','left',1,'#2b1a14');
@@ -697,9 +699,9 @@ function renderGame(){
   }
   if(phase==='levelup'){
     const p=Math.max(0,Math.min(1,(2.4-luT)/0.3));
-    const yb=112+(1-p)*-60; stairRect(40,yb,240,60,3,'#141414'); ctx.fillStyle='#141414'; ctx.fillRect(148,yb+60,24,4); ctx.fillRect(152,yb+64,16,4); ctx.fillRect(156,yb+68,8,4);
+    const yb=112+(1-p)*-60; stairRect(40,yb,240,60,3,'#2E160C'); ctx.fillStyle='#2E160C'; ctx.fillRect(148,yb+60,24,4); ctx.fillRect(152,yb+64,16,4); ctx.fillRect(156,yb+68,8,4);
     chunkyText('LEVEL UP!',160,yb+18,5,27,'center',0);
-    drawGirl(75,240,1.8,Math.abs(Math.sin(appT*8))*-8);
+    drawGirl(72,236,1.75,Math.abs(Math.sin(appT*8))*-8);
   }
   if(phase==='paused'){
     ctx.fillStyle='rgba(20,10,30,0.75)'; ctx.fillRect(0,0,W,H);
