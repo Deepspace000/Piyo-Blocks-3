@@ -129,40 +129,46 @@ const FOOD=[ // food block set: same seven slots as the piyos, drawn as icons on
  {n:'amethyst',  c:'#9A48E8',l:'#D0A0FF',d:'#4A1A80'},
 ];
 function TH(t){ return (SAVE.food&&t<NCOL)?FOOD[t]:TYPES[t]; } // colours for particles, HUD and glows follow the active block set
-function drawFood(t,s){ // one food icon centred on the origin, designed in a 42px box
-  const k=s/42; ctx.save(); ctx.scale(k,k); ctx.lineWidth=3; ctx.strokeStyle='#15100f'; ctx.lineJoin='round';
-  if(t===0){ // strawberry: red heart body, yellow seeds, leaf crown
-    ctx.beginPath(); ctx.moveTo(0,19); ctx.bezierCurveTo(-22,4,-19,-14,0,-11); ctx.bezierCurveTo(19,-14,22,4,0,19); ctx.closePath(); ctx.fillStyle='#F03A3A'; ctx.fill(); ctx.stroke();
-    ctx.fillStyle='#FFE070'; for(const [x,y] of [[-8,-2],[0,-4],[8,-2],[-5,6],[5,6],[0,12]]){ ctx.beginPath(); ctx.ellipse(x,y,1.6,2.4,0,0,Math.PI*2); ctx.fill(); }
-    ctx.lineWidth=2; for(const a of [-1.1,-0.4,0.4,1.1]){ ctx.beginPath(); ctx.ellipse(Math.sin(a)*7,-13+Math.abs(a),3,6,a,0,Math.PI*2); ctx.fillStyle='#4CC94C'; ctx.fill(); ctx.stroke(); }
-  } else if(t===1){ // orange with a leaf
-    ctx.beginPath(); ctx.arc(0,2,17,0,Math.PI*2); ctx.fillStyle='#F88A20'; ctx.fill(); ctx.stroke();
-    ctx.fillStyle='rgba(160,74,8,0.3)'; for(const [x,y] of [[6,6],[10,-1],[2,12],[-8,9],[-3,-2]]){ ctx.beginPath(); ctx.arc(x,y,1.4,0,Math.PI*2); ctx.fill(); }
-    ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.beginPath(); ctx.arc(-7,-5,4.5,0,Math.PI*2); ctx.fill();
-    ctx.lineWidth=2; ctx.beginPath(); ctx.ellipse(6,-15,7,3.5,-0.5,0,Math.PI*2); ctx.fillStyle='#4CC94C'; ctx.fill(); ctx.stroke();
-  } else if(t===2){ // lime slice
-    ctx.beginPath(); ctx.arc(0,0,18,0,Math.PI*2); ctx.fillStyle='#4CB830'; ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.arc(0,0,14,0,Math.PI*2); ctx.fillStyle='#D8F8A0'; ctx.fill();
-    ctx.fillStyle='#8EDC48'; for(let i=0;i<8;i++){ ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,12,i*Math.PI/4+0.14,(i+1)*Math.PI/4-0.14); ctx.closePath(); ctx.fill(); }
-    ctx.beginPath(); ctx.arc(0,0,2.5,0,Math.PI*2); ctx.fillStyle='#D8F8A0'; ctx.fill();
-  } else if(t===3){ // salmon nigiri on a dark tray
-    frr(-19,5,38,13,4,'#15100f'); frr(-17,7,34,9,3,'#2a2a34');
-    rr(-15,-2,30,14,5); ctx.fillStyle='#FFF4E0'; ctx.fill(); ctx.stroke();
-    rr(-18,-15,36,15,6); ctx.fillStyle='#F86A30'; ctx.fill(); ctx.stroke();
-    ctx.strokeStyle='#FFB090'; ctx.lineWidth=2; for(const x of [-11,-3,5]){ ctx.beginPath(); ctx.moveTo(x,-12); ctx.lineTo(x+4,-3); ctx.stroke(); }
-  } else if(t===4){ // sapphire: round faceted blue gem
-    ctx.beginPath(); ctx.arc(0,0,18,0,Math.PI*2); ctx.fillStyle='#2E5AE0'; ctx.fill(); ctx.stroke();
-    ctx.beginPath(); for(let i=0;i<8;i++){ const a=i*Math.PI/4-Math.PI/8; i?ctx.lineTo(Math.cos(a)*11,Math.sin(a)*11):ctx.moveTo(Math.cos(a)*11,Math.sin(a)*11); } ctx.closePath(); ctx.fillStyle='#6A94FF'; ctx.fill();
-    ctx.strokeStyle='#8AB0FF'; ctx.lineWidth=1.5; for(let i=0;i<8;i++){ const a=i*Math.PI/4-Math.PI/8; ctx.beginPath(); ctx.moveTo(Math.cos(a)*11,Math.sin(a)*11); ctx.lineTo(Math.cos(a)*17,Math.sin(a)*17); ctx.stroke(); }
-    ctx.fillStyle='rgba(255,255,255,0.7)'; ctx.beginPath(); ctx.arc(-6,-6,3.5,0,Math.PI*2); ctx.fill();
-  } else if(t===5){ // diamond: cyan rhombus with a table facet
-    ctx.beginPath(); ctx.moveTo(0,-19); ctx.lineTo(18,0); ctx.lineTo(0,19); ctx.lineTo(-18,0); ctx.closePath(); ctx.fillStyle='#58D8F0'; ctx.fill(); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(9,0); ctx.lineTo(0,8); ctx.lineTo(-9,0); ctx.closePath(); ctx.fillStyle='#C8F6FF'; ctx.fill();
-    ctx.strokeStyle='#C8F6FF'; ctx.lineWidth=1.5; for(const [x,y,x2,y2] of [[0,-8,0,-19],[9,0,18,0],[0,8,0,19],[-9,0,-18,0]]){ ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x2,y2); ctx.stroke(); }
-  } else if(t===6){ // amethyst: purple hexagon gem
-    ctx.beginPath(); for(let i=0;i<6;i++){ const a=i*Math.PI/3-Math.PI/2; i?ctx.lineTo(Math.cos(a)*19,Math.sin(a)*19):ctx.moveTo(Math.cos(a)*19,Math.sin(a)*19); } ctx.closePath(); ctx.fillStyle='#9A48E8'; ctx.fill(); ctx.stroke();
-    ctx.beginPath(); for(let i=0;i<6;i++){ const a=i*Math.PI/3-Math.PI/2; i?ctx.lineTo(Math.cos(a)*10,Math.sin(a)*10):ctx.moveTo(Math.cos(a)*10,Math.sin(a)*10); } ctx.closePath(); ctx.fillStyle='#D0A0FF'; ctx.fill();
-    ctx.strokeStyle='#D0A0FF'; ctx.lineWidth=1.5; for(let i=0;i<6;i++){ const a=i*Math.PI/3-Math.PI/2; ctx.beginPath(); ctx.moveTo(Math.cos(a)*10,Math.sin(a)*10); ctx.lineTo(Math.cos(a)*18,Math.sin(a)*18); ctx.stroke(); }
+function drawFood(t,s){ // one chunky food icon centred on the origin, designed in a 42px box: thick black outlines, flat colour, one bold highlight
+  const k=s/42; ctx.save(); ctx.scale(k,k); ctx.lineWidth=4; ctx.strokeStyle='#15100f'; ctx.lineJoin='round'; ctx.lineCap='round';
+  const gloss=(x,y,w,h)=>{ ctx.globalAlpha=.7; frr(x,y,w,h,h/2,'#ffffff'); ctx.globalAlpha=1; };
+  if(t===0){ // strawberry: wide red body to a point, yellow seeds, chunky leaf crown
+    ctx.beginPath(); ctx.moveTo(0,21); ctx.bezierCurveTo(-26,6,-22,-14,0,-12); ctx.bezierCurveTo(22,-14,26,6,0,21); ctx.closePath(); ctx.fillStyle='#F03A3A'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#FFE060'; for(const [x,y] of [[-9,-2],[0,-5],[9,-2],[-6,7],[6,7],[0,13]]){ ctx.beginPath(); ctx.ellipse(x,y,2.2,3.2,0,0,Math.PI*2); ctx.fill(); }
+    ctx.fillStyle='#4CC94C'; ctx.beginPath(); ctx.moveTo(-15,-12); ctx.lineTo(-8,-20); ctx.lineTo(-3,-13); ctx.lineTo(0,-22); ctx.lineTo(3,-13); ctx.lineTo(8,-20); ctx.lineTo(15,-12); ctx.lineTo(8,-8); ctx.lineTo(0,-10); ctx.lineTo(-8,-8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    gloss(-13,-6,8,4);
+  } else if(t===1){ // orange: big round, chunky leaf, dimples
+    ctx.beginPath(); ctx.arc(0,2,19,0,Math.PI*2); ctx.fillStyle='#F88A20'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#C85A10'; for(const [x,y] of [[7,8],[12,-1],[2,14],[-9,10],[-3,-1]]){ ctx.beginPath(); ctx.arc(x,y,1.8,0,Math.PI*2); ctx.fill(); }
+    ctx.fillStyle='#4CC94C'; ctx.beginPath(); ctx.moveTo(2,-15); ctx.quadraticCurveTo(8,-26,18,-20); ctx.quadraticCurveTo(12,-12,2,-15); ctx.closePath(); ctx.fill(); ctx.stroke();
+    gloss(-12,-8,10,5);
+  } else if(t===2){ // lime slice: green rind, cream pith, six wedges
+    ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fillStyle='#4CB830'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,0,15,0,Math.PI*2); ctx.fillStyle='#E8F8B8'; ctx.fill();
+    ctx.fillStyle='#8EDC48'; for(let i=0;i<6;i++){ ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,13,i*Math.PI/3+0.16,(i+1)*Math.PI/3-0.16); ctx.closePath(); ctx.fill(); }
+    ctx.beginPath(); ctx.arc(0,0,3,0,Math.PI*2); ctx.fillStyle='#E8F8B8'; ctx.fill();
+    gloss(-13,-11,8,4);
+  } else if(t===3){ // salmon nigiri: black tray with white rim, rice block, thick salmon slab with white stripes
+    frr(-21,4,42,17,5,'#15100f'); frr(-18,7,36,11,3,'#ffffff'); frr(-16,9,32,7,2,'#2a2a34');
+    rr(-16,-3,32,14,5); ctx.fillStyle='#FFF8EC'; ctx.fill(); ctx.stroke();
+    rr(-20,-19,40,17,7); ctx.fillStyle='#F86A30'; ctx.fill(); ctx.stroke();
+    ctx.strokeStyle='#FFF0E0'; ctx.lineWidth=3; for(const x of [-12,-3,6]){ ctx.beginPath(); ctx.moveTo(x,-15); ctx.lineTo(x+5,-6); ctx.stroke(); }
+  } else if(t===4){ // sapphire: round dark-blue gem with a bold star of facets
+    ctx.beginPath(); ctx.arc(0,0,20,0,Math.PI*2); ctx.fillStyle='#2A4CD0'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); for(let i=0;i<5;i++){ const a=i*Math.PI*2/5-Math.PI/2, a2=a+Math.PI/5; ctx.lineTo(Math.cos(a)*15,Math.sin(a)*15); ctx.lineTo(Math.cos(a2)*7,Math.sin(a2)*7); } ctx.closePath(); ctx.fillStyle='#6A94FF'; ctx.fill();
+    ctx.beginPath(); ctx.arc(0,0,5,0,Math.PI*2); ctx.fillStyle='#B0D0FF'; ctx.fill();
+    gloss(-13,-11,8,4);
+  } else if(t===5){ // diamond: wide cyan gem, crown and pavilion facets
+    ctx.beginPath(); ctx.moveTo(-11,-19); ctx.lineTo(11,-19); ctx.lineTo(21,-5); ctx.lineTo(0,21); ctx.lineTo(-21,-5); ctx.closePath(); ctx.fillStyle='#58D8F0'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle='#C8F6FF'; ctx.beginPath(); ctx.moveTo(-11,-19); ctx.lineTo(11,-19); ctx.lineTo(7,-5); ctx.lineTo(-7,-5); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#2AA8C8'; ctx.beginPath(); ctx.moveTo(-7,-5); ctx.lineTo(7,-5); ctx.lineTo(0,21); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='#C8F6FF'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(-21,-5); ctx.lineTo(21,-5); ctx.stroke();
+  } else if(t===6){ // amethyst: purple hexagon with a lighter inner hexagon
+    const hexa=(r)=>{ ctx.beginPath(); for(let i=0;i<6;i++){ const a=i*Math.PI/3-Math.PI/2; i?ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r):ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r); } ctx.closePath(); };
+    hexa(21); ctx.fillStyle='#9A48E8'; ctx.fill(); ctx.stroke();
+    hexa(11); ctx.fillStyle='#D0A0FF'; ctx.fill();
+    ctx.strokeStyle='#D0A0FF'; ctx.lineWidth=2.5; for(let i=0;i<6;i++){ const a=i*Math.PI/3-Math.PI/2; ctx.beginPath(); ctx.moveTo(Math.cos(a)*11,Math.sin(a)*11); ctx.lineTo(Math.cos(a)*19,Math.sin(a)*19); ctx.stroke(); }
+    gloss(-13,-11,8,4);
   }
   ctx.restore(); }
 const DISCO_RING=['#FF5CD0','#FF3838','#4C3FFF','#FFA030','#5CFF5C','#48E8FF','#B060FF','#9a9aa8'];
